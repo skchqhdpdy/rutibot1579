@@ -80,7 +80,7 @@ client.on('message', (message) => {
         message.channel.send("!홈페이지 (봇이 대신 입력해드렸어요!! XD)")
     }
 
-    if(message.content === `${prefix}github`) {
+    if(message.content === `${prefix}github` || message.content === `${prefix}깃허브`) {
         const embed = new Discord.MessageEmbed()
         .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
         .setTitle("명령어")
@@ -91,6 +91,7 @@ client.on('message', (message) => {
         .addFields(
             {name:"https://github.com/skchqhdpdy", value:"<@399535550832443392>의 github 페이지"},
             {name:"https://github.com/skchqhdpdy/rutibot1579", value:"<@1143492519276060752>의 소스코드"},
+            {name:"https://github.com/skchqhdpdy/2024-Twitch-Streamer-Collabo", value:"web 페이지 소스코드?"},
         )
 
         .setTimestamp(new Date())

@@ -1,7 +1,30 @@
 const Discord = require('discord.js');
 const { json } = require('express');
 const client = new Discord.Client();
-const { prefix, token } = require("./config.json");
+const { prefix, token, Twitch_token } = require("./config.json");
+
+/////////////////////////////////////////////////////////////////////////////
+
+const twModule = require('./tw.js');
+
+const TWITCH_TOKEN = Twitch_token;
+const DISCORD_TOKEN = token;
+const TWITCH_CHANNEL = 'skchqhdpdy2';
+const DISCORD_CHANNEL_ID = '1145014359588880568';
+
+const twitchBot = twModule.initTwitchBot(TWITCH_TOKEN, TWITCH_CHANNEL);
+const discordBot = twModule.initDiscordBot(DISCORD_TOKEN);
+
+twitchBot.on('message', (channel, user, tw_message) => {
+  if (channel === `#${TWITCH_CHANNEL}`) {
+    const discordChannel = discordBot.channels.cache.get(DISCORD_CHANNEL_ID);
+    if (discordChannel) {
+      discordChannel.send(`Twitch Chat - ${user.username}: ${tw_message}`);
+    }
+  }
+});
+
+/////////////////////////////////////////////////////////////////////////////
 
 client.setMaxListeners(0)
 
@@ -113,7 +136,7 @@ client.on('message', (message) => {
     if (message.content === "몇명의 찬란한 연지인형" & message.channel.id === "1146725666348339323") {
         message.reply("님 이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
     }
-    console.log(`${message.channel} | ${message.author}  ${message.content} | ${message.attachments} | ${message.system}`)
+    //console.log(`${message.channel} | ${message.author}  ${message.content} | ${message.attachments} | ${message.system}`)
 
 /////////////////////////////////////////////////////////////따로뺴둠//////////////////////////////////////////////////////////////
 

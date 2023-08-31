@@ -10,7 +10,7 @@ const twModule = require('./tw.js');
 const TWITCH_TOKEN = Twitch_token;
 const DISCORD_TOKEN = token;
 const TWITCH_CHANNEL = 'skchqhdpdy2';
-const DISCORD_CHANNEL_ID = '1145014359588880568';
+const DISCORD_CHANNEL_ID = '1146797782989029376';
 
 const twitchBot = twModule.initTwitchBot(TWITCH_TOKEN, TWITCH_CHANNEL);
 const discordBot = twModule.initDiscordBot(DISCORD_TOKEN);

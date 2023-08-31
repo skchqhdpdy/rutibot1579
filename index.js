@@ -110,7 +110,7 @@ client.on('message', (message) => {
     if (message.content === "비밀") {
         message.reply("꺅 비밀 들켜버렸다")
     }
-    if (message.content === "몇명의 찬란한 연지인형") {
+    if (message.content === "몇명의 찬란한 연지인형" & message.channel.id === "1146725666348339323") {
         message.reply("님 이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
     }
     console.log(`${message.channel} | ${message.author}  ${message.content} | ${message.attachments} | ${message.system}`)

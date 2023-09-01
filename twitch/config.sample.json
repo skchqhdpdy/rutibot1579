@@ -1,0 +1,9 @@
+{
+    "prefix": "!",
+    "token": "YOUR_DISCORD_BOT_TOKEN",
+    "Twitch_token": "YOUR_TWITCH_OAuth_TOKEN",
+    "Discord_channel_ID": "DISCORD_CHANNEL_ID",
+    "Twitch_channels": [
+        "skchqhdpdy2"
+    ]
+}

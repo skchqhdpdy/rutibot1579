@@ -1,30 +1,7 @@
 const Discord = require('discord.js');
 const { json } = require('express');
 const client = new Discord.Client();
-const { prefix, token, Twitch_token } = require("./config.json");
-
-/////////////////////////////////////////////////////////////////////////////
-
-const twModule = require('./tw.js');
-
-const TWITCH_TOKEN = Twitch_token;
-const DISCORD_TOKEN = token;
-const TWITCH_CHANNEL = 'skchqhdpdy2';
-const DISCORD_CHANNEL_ID = '1146797782989029376';
-
-const twitchBot = twModule.initTwitchBot(TWITCH_TOKEN, TWITCH_CHANNEL);
-const discordBot = twModule.initDiscordBot(DISCORD_TOKEN);
-
-twitchBot.on('message', (channel, user, tw_message) => {
-  if (channel === `#${TWITCH_CHANNEL}`) {
-    const discordChannel = discordBot.channels.cache.get(DISCORD_CHANNEL_ID);
-    if (discordChannel) {
-      discordChannel.send(`Twitch Chat - ${user.username}: ${tw_message}`);
-    }
-  }
-});
-
-/////////////////////////////////////////////////////////////////////////////
+const { prefix, token } = require("./config.json");
 
 client.setMaxListeners(0)
 

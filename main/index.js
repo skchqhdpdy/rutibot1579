@@ -65,9 +65,8 @@ client.on('message', (message) => {
         .setThumbnail("https://collabo.lol/img/discord/setThumbnail.webp")
         
         .addFields(
-            {name:"https://collabo.lol/pokemon", value:"마크 1.12.2 포켓몬 서버"},
-            {name:"https://collabo.lol/pvp", value:"마크 1.20.1 PVP, 건축 서버"},
-            {name:"https://pvp.collabo.lol", value:"하나의 주소로 관리하려고 없앰 (마크 1.20.1 PVP, 건축 서버)"},
+            {name:"https://collabo.lol/pokemon", value:"마크 1.12.2 포켓몬 서버 홈페이지"},
+            {name:"https://collabo.lol/pvp", value:"마크 1.20.1 PVP, 건축 서버 홈페이지"},
         )
 
         .setTimestamp(new Date())

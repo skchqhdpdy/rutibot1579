@@ -7,8 +7,8 @@ const TWITCH_TOKEN = Twitch_token;
 const DISCORD_TOKEN = token;
 
 // Twitch 채널 및 Discord 채널 ID
-const TWITCH_CHANNEL = Twitch_channels[0];
-const DISCORD_CHANNEL_ID = Discord_channel_ID;
+const TWITCH_CHANNEL = Twitch_channels[0]["twitch_id"];
+const DISCORD_CHANNEL_ID = Twitch_channels[0]["Discord_channel_ID"];
 
 // Twitch 봇 초기화
 const twitchClient = new tmi.Client({

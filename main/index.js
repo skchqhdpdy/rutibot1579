@@ -2,6 +2,8 @@ const Discord = require('discord.js');
 const { json } = require('express');
 const client = new Discord.Client();
 const { prefix, token } = require("./config.json");
+const fs = require('fs');
+const { log } = require('console');
 
 client.setMaxListeners(0)
 
@@ -106,10 +108,18 @@ client.on('message', (message) => {
 ////////////////////////////////////////////////////////////이스터 애그/////////////////////////////////////////////////////////////
 
     //config.json에서 설정 추가해서 활성화 명령어 입력시 활성화 시키게 만들기
+    let { SecretCode } = require("./secretcode.json");
+
+    /* if (message.content === `${prefix}secretcode`) {
+        let { secretcode_status } = require("./secretcode.json");
+        message.channel.send(secretcode_status)
+        changeSecretCodeStatus("./secretcode.json")
+    } */
+
     if (message.content === "비밀") {
         message.reply("꺅 비밀 들켜버렸다")
     }
-    if (message.content === "몇명의 찬란한 연지인형" & message.channel.id === "1146725666348339323") {
+    if (message.content === SecretCode[0] & message.channel.id === "1146725666348339323") {
         message.reply("님 이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
     }
     //console.log(`${message.channel} | ${message.author}  ${message.content} | ${message.attachments} | ${message.system}`)
@@ -126,5 +136,60 @@ client.on('message', (message) => {
         console.log(`서버핑은 **${timeTake}ms** 입니다.`);
     }
 });
+
+//secretcode.json 상태 변경 코드
+/* function changeSecretCodeStatus(filePath, status) {
+    // JSON 파일 읽기
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('파일을 읽을 수 없습니다.', err);
+            return;
+        }
+        // JSON 데이터 파싱
+        const jsonData = JSON.parse(data);
+        // jsonData를 수정하거나 변경합니다.
+        jsonData.secretcode_status = status;
+        // 수정된 JSON 데이터를 파일에 씁니다.
+        fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), 'utf8', (err) => {
+            if (err) {
+                console.error('파일을 쓸 수 없습니다.', err);
+                return;
+            }
+            console.log('파일이 성공적으로 수정되었습니다.');
+        });
+    });
+} */
+
+function changeSecretCodeStatus(filePath) {
+    // JSON 파일 읽기
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('파일을 읽을 수 없습니다.', err);
+            return;
+        }
+
+        // JSON 데이터 파싱
+        let jsonData = JSON.parse(data);
+
+        // JSON 데이터를 수정하여 스위치처럼 true 또는 false 값을 변경합니다.
+        jsonData = {
+            ...jsonData,
+            secretcode_status: !jsonData.secretcode_status, // 스위치 값을 반전시킵니다.
+        };
+
+        // 수정된 데이터를 다시 JSON 문자열로 변환합니다.
+        const updatedData = JSON.stringify(jsonData, null, 2);
+
+        // 수정된 JSON 데이터를 파일에 씁니다.
+        fs.writeFile(filePath, updatedData, 'utf8', (err) => {
+        if (err) {
+            console.error('파일을 쓸 수 없습니다.', err);
+            return;
+        }
+        console.log('파일이 성공적으로 수정되었습니다.');
+        });
+    });
+
+}
 
 client.login(token);

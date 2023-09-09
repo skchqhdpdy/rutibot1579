@@ -12,6 +12,23 @@ client.on('ready', () => {
 	client.user.setActivity('!명령어', { type: 'LISTENING' })
 });
 
+//유저 디코입장
+client.on('guildMemberAdd', (member) => {
+    const channel = member.guild.channels.cache.find((ch) => ch.id === '1149986137377620029');
+    if (!channel) return;
+
+    // Embed 메시지를 생성하여 프로필 사진을 포함시킵니다.
+    const embed = new Discord.MessageEmbed()
+        .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+        .setTitle(`안녕하세요, \`${member.user.tag}\` 님! 서버에 가입하신 것을 환영합니다!`)
+        .setColor("#F280EB")
+        .setThumbnail(member.user.displayAvatarURL()) // 프로필 사진을 Embed에 추가
+        .setTimestamp(new Date())
+        .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+
+    channel.send(`<@${member.user.id}>`, embed);
+});
+
 client.on('message', (message) => {
     if(message.content === `${prefix}명령어`) {
 

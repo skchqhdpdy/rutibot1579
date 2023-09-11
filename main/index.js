@@ -2,6 +2,12 @@ const Discord = require('discord.js');
 const { json } = require('express');
 const client = new Discord.Client();
 const { prefix, token } = require("./config.json");
+//rainbow color
+const {
+    serverID, 
+    roleID, 
+    interval 
+} = require('./config.json')
 const fs = require('fs');
 const { log } = require('console');
 
@@ -10,6 +16,19 @@ client.setMaxListeners(0)
 client.on('ready', () => {
     console.log('루티봇#1579 온라인!');
 	client.user.setActivity('!명령어', { type: 'LISTENING' })
+
+    //rainbow color
+    let guild = client.guilds.cache.get(serverID) 
+    if(!guild) throw `[ Error ] Server Peida Nashod: ${serverID}` 
+
+    let role = guild.roles.cache.find(u => u.id === roleID) 
+    if(!role) throw `[ Error ] Role Peida Nashod, Server Name: ${guild.name}` 
+    
+    if(interval < 60000) console.log(`\nRainbow Color | [!!!] Khatarnake Havaset bashe`) 
+
+    setInterval(() => {
+        role.edit({color: 'RANDOM'}).catch(err => console.log(`[ Error ] An error occurred during the role change.`));
+    }, interval)
 });
 
 //유저 디코입장

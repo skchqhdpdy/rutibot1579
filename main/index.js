@@ -67,6 +67,7 @@ client.on('message', (message) => {
             {name:"!투표", value:"O 또는 X 로 투표를 할수있습니다. \n사용법:!투표 투표할 내용"},
             {name:"!홈페이지", value:"운영중인 홈페이지 주소를 보여줍니다."},
             {name:"!github", value:"깃허브 페이지"},
+            {name:"!clear {지울 만큼의 숫자}", value:"!clear 명렁어를 `포함한` 개수의 메세지 삭제"},
         )
 
         .setTimestamp(new Date())
@@ -141,6 +142,34 @@ client.on('message', (message) => {
 
     if (message.content === `${prefix}트위치` || message.content === `${prefix}twitch`) {
         message.channel.send("<@399535550832443392> 야 너 기능 만들어!")
+    }
+
+    if (message.content.startsWith(`${prefix}clear`)) {
+		if (!message.member.hasPermission("MANAGE_MESSAGES")) { //만약에 명령어를 입력한 사람 권한 중 MANAGE_MESSAGES 라는 권한이 없다면
+			return message.reply("권한이 없습니다."); //전송
+		}
+		let purge = message.content.substring(6) * 1
+			if (!purge || purge == "") { //만약 메세지가 비어있거나 안써져있다면
+				return message.reply("숫자를 입력해주세요,") //전송
+			}
+			if (purge > 100) { //만약 purge의 값이 100보다 크다면
+				return message.reply("1부터 100까지만 입력하세요.") //전송
+			}
+			if (purge < 1) { //만약 purge의 값이 1보다 작다면
+				return message.reply("1부터 100까지만 입력하세요.") //전송
+			}
+			if (isNaN(purge) == true) { //isNaN은 정수인지 판단하는 함수입니다. 문자열이 포함되어있을 경우 true를 반환합니다.
+				return message.reply("숫자만 입력하세요.") //전송
+			} else { //아니라면
+                message.channel.bulkDelete(purge) //purge 변수 만큼 채널에세 메세지를 삭제합니다. //전송
+                .then(() => message.reply(`${purge}개의 메세지를 삭제했습니다. 이 메세지는 5초후 삭제 됩니다.`))
+                .catch(console.error)
+
+                setTimeout(() => {
+                    message.channel.bulkDelete(1)
+                }, 5000);
+                
+			}
     }
 
 ////////////////////////////////////////////////////////////이스터 애그/////////////////////////////////////////////////////////////

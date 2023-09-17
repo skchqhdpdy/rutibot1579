@@ -1,6 +1,8 @@
 const Discord = require('discord.js');
 const { json } = require('express');
-const client = new Discord.Client();
+const client = new Discord.Client({
+    partials: ['MESSAGE', 'REACTION'], // 이 부분을 추가하여 메시지와 반응 데이터를 캐시합니다.
+});
 const { prefix, token } = require("./config.json");
 //rainbow color
 //보류
@@ -49,7 +51,74 @@ client.on('guildMemberAdd', (member) => {
 
     channel.send(`<@${member.user.id}>`, embed);
 });
+//유저 디코 퇴장
+client.on('guildMemberRemove', (member) => {
+    const channel = member.guild.channels.cache.find((ch) => ch.id === '1149986137377620029');
+    if (!channel) return;
 
+    // Embed 메시지를 생성하여 프로필 사진을 포함시킵니다.
+    const embed = new Discord.MessageEmbed()
+        .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+        .setTitle(`안녕히 가세요, \`${member.user.tag}\` 님! 서버에서 나가셨습니다.`)
+        .setColor("#FF5733")
+        .setThumbnail(member.user.displayAvatarURL()) // 프로필 사진을 Embed에 추가
+        .setTimestamp(new Date())
+        .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+
+    channel.send(`<@${member.user.id}>`, embed);
+});
+
+
+//zira봇 역할
+const CHANNEL_ID = '1107570796555149353'; // 이벤트를 감지할 채널 ID
+const MESSAGE_ID = '1145201143023157298'; // 이벤트를 감지할 메시지 ID
+const EMOJI_NAME = "minecraft"; // 반응에 사용할 이모지 이름
+const ROLE_ID = '1145215725645074442'; // 부여할 역할 ID
+
+function MCRoleUpdateSendLog(channelId, content) {
+    // 지정된 채널을 찾아서 메시지를 보냅니다.
+    const targetChannel = client.channels.cache.get(channelId);
+    if (targetChannel) {
+        targetChannel.send(content);
+    } else {
+        console.log(`<#${channelId}> 해당 채널을 찾을 수 없음`)
+    }
+}
+
+client.on('messageReactionAdd', async (reaction, user) => {
+    // 반응한 메시지가 지정한 채널에 있는지 확인합니다.
+    if (reaction.message.channel.id !== CHANNEL_ID) return;
+    
+    // 반응한 메시지가 지정한 메시지인지 확인합니다.
+    if (reaction.message.id === MESSAGE_ID && reaction.emoji.name === EMOJI_NAME) {
+        const member = reaction.message.guild.members.cache.get(user.id);
+        const role = reaction.message.guild.roles.cache.get(ROLE_ID);
+        if (member && role) {
+            await member.roles.add(role);
+            msg = `[${user.tag}]에게 [${role.name}] 역할을 추가했습니다.`
+            console.log(msg);
+            MCRoleUpdateSendLog("1152894841236246558", msg)
+        }
+    }
+});
+client.on('messageReactionRemove', async (reaction, user) => {
+    // 반응한 메시지가 지정한 채널에 있는지 확인합니다.
+    if (reaction.message.channel.id !== CHANNEL_ID) return;
+  
+    // 반응한 메시지가 지정한 메시지인지 확인합니다.
+    if (reaction.message.id === MESSAGE_ID && reaction.emoji.name === EMOJI_NAME) {
+        const member = reaction.message.guild.members.cache.get(user.id);
+        const role = reaction.message.guild.roles.cache.get(ROLE_ID);
+        if (member && role) {
+            await member.roles.remove(role);
+            msg = `[${user.tag}]에게 [${role.name}] 역할을 제거했습니다.`
+            console.log(msg);
+            MCRoleUpdateSendLog("1152894841236246558", msg)
+        }
+    }
+});
+
+//메인
 client.on('message', (message) => {
     if(message.content === `${prefix}명령어`) {
 

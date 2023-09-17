@@ -75,7 +75,7 @@ const MESSAGE_ID = '1145201143023157298'; // 이벤트를 감지할 메시지 ID
 const EMOJI_NAME = "minecraft"; // 반응에 사용할 이모지 이름
 const ROLE_ID = '1145215725645074442'; // 부여할 역할 ID
 
-function MCRoleUpdateSendLog(channelId, content) {
+function sendLogDiscord(channelId, content) {
     // 지정된 채널을 찾아서 메시지를 보냅니다.
     const targetChannel = client.channels.cache.get(channelId);
     if (targetChannel) {
@@ -97,7 +97,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
             await member.roles.add(role);
             msg = `[${user.tag}]에게 [${role.name}] 역할을 추가했습니다.`
             console.log(msg);
-            MCRoleUpdateSendLog("1152894841236246558", msg)
+            sendLogDiscord("1152894841236246558", msg)
         }
     }
 });
@@ -113,7 +113,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
             await member.roles.remove(role);
             msg = `[${user.tag}]에게 [${role.name}] 역할을 제거했습니다.`
             console.log(msg);
-            MCRoleUpdateSendLog("1152894841236246558", msg)
+            sendLogDiscord("1152894841236246558", msg)
         }
     }
 });

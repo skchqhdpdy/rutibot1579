@@ -23,7 +23,7 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Client Events
  */
 client.on("ready", () => {
-  console.log(`${client.user.username}#9382 음악봇 ready!`);
+  console.log(`${client.user.username}#1579 음악봇 ready!`);
   client.user.setActivity('"음악 전용" 봇 모드로 실행중!!', { type: 'LISTENING' })
 });
 client.on("warn", (info) => console.log(info));

@@ -156,11 +156,12 @@ try {
             .addFields(
                 {name:"!명령어", value:"명령어를 보여줍니다."},
                 {name:"!봇 초대", value:"봇 초대 주소입니다."},
-                {name:"!ping", value:"봇의 서버핑을 보여줍니다."},
+                {name:"!ping", value:"봇의 서버핑을 보여줍니다. (음악봇 !ping이랑 중복됨)"},
                 {name:"!투표", value:"O 또는 X 로 투표를 할수있습니다. \n사용법:!투표 투표할 내용"},
                 {name:"!홈페이지", value:"운영중인 홈페이지 주소를 보여줍니다."},
                 {name:"!github", value:"깃허브 페이지"},
                 {name:"!clear {지울 만큼의 숫자}", value:"!clear 명렁어를 `포함한` 개수의 메세지 삭제"},
+                {name:"!help (h)", value:"!help (h) 음악봇 관련 명령어 입니다."},
             )
     
             .setTimestamp(new Date())

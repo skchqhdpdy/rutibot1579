@@ -6,11 +6,11 @@ const client = new Discord.Client({
 const { prefix, token } = require("./config.json");
 //rainbow color
 //보류
-const {
+/* const {
     serverID, 
     roleID, 
     interval 
-} = require('./config.json')
+} = require('./config.json') */
 const fs = require('fs');
 const { log } = require('console');
 
@@ -22,7 +22,7 @@ client.on('ready', () => {
 
     //rainbow color
     //보류
-    let guild = client.guilds.cache.get(serverID) 
+    /* let guild = client.guilds.cache.get(serverID) 
     if(!guild) throw `[ Error ] Server Peida Nashod: ${serverID}` 
 
     let role = guild.roles.cache.find(u => u.id === roleID) 
@@ -32,7 +32,7 @@ client.on('ready', () => {
 
     setInterval(() => {
         role.edit({color: 'RANDOM'}).catch(err => console.log(`[ Error ] An error occurred during the role change.`));
-    }, interval)
+    }, interval) */
 });
 
 //유저 디코입장

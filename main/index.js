@@ -162,6 +162,7 @@ try {
                 {name:"!github", value:"깃허브 페이지"},
                 {name:"!clear {지울 만큼의 숫자}", value:"!clear 명렁어를 `포함한` 개수의 메세지 삭제"},
                 {name:"!help (h)", value:"!help (h) 음악봇 관련 명령어 입니다."},
+                {name:"!마니또 추첨", value:"마니또를 추첨하는 명령어 입니다. (합방 시작전에 관리자들 끼리 합의 하에 추첨을 하고 그걸 고정해서 사용할 예정)"},
             )
     
             .setTimestamp(new Date())
@@ -265,6 +266,115 @@ try {
                     
                 }
         }
+
+        //마니또 추첨
+        if (message.content === `${prefix}마니또 추첨`) {
+            const guildId = '1107568623050047550'; // 스트리머 역할을 찾을 서버(길드)의 ID를 입력하세요.
+            const roleToFind = '스트리머'; // 찾을 역할의 이름을 입력하세요.
+            
+            // 서버(길드) 객체를 가져옵니다.
+            const guild = client.guilds.cache.get(guildId);
+            // 역할을 찾습니다.
+            const role = guild.roles.cache.find((r) => r.name === roleToFind);
+    
+            if (!role) {
+                console.error('역할을 찾을 수 없습니다.');
+                return;
+            }
+    
+            // 스트리머 역할을 가진 멤버 목록을 추출합니다.
+            const streamerMembers = guild.members.cache.filter((member) => member.roles.cache.has(role.id));
+    
+            // 마니또 참가자 목록
+            // 끼음, 복미, 오소희, 솜팡, 남야 님은 반확정이라서 넣어줘용
+            // 저랑 쥐님이랑 공허님(hyp로시작하는분)빼고
+            const participants = []; // 필요한 참가자 수만큼 추가하세요.
+            const exceptUser = []
+    
+            // 스트리머 역할을 가진 멤버의 ID와 이름을 출력합니다.
+            streamerMembers.forEach((member) => {
+                //console.log(`유저 ID: ${member.user.id}, 유저 이름: ${member.user.tag}`);
+                // @스트리머 역할중 3명 제외
+                if (member.user.id !== "657145673296117760" && member.user.id !== "472607419474640897" && member.user.id !== "448274272104873984") {
+                    participants.push(member.user.id)
+                } else {
+                    exceptUser.push(member.user.id)
+                }
+            });
+            
+            // 총 4명의 유저는 예외로 서로서로 마니또
+            // 제외유저 추가
+            let eachManito = []
+            const participantsLength = participants.length
+            for (let i = 0; i < 4;) {
+                let r = Math.floor(Math.random() * participantsLength)
+                
+                if (eachManito.indexOf(participants[r]) === -1) {
+                    eachManito.push(participants[r])
+                    i++
+                }
+            }
+            // 기존 유저에서 제외 유저 제거
+            for (let i = 0; i < 4; i++) {
+                const partIndex = participants.indexOf(eachManito[i])
+                if (partIndex !== -1) {
+                    participants.splice(partIndex, 1)
+                }
+            }
+            
+            // 참가자를 무작위로 섞기
+            for (let i = participants.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [participants[i], participants[j]] = [participants[j], participants[i]];
+            }
+            
+            let resultMember = []
+            
+            // 마니또 매칭
+            for (let i = 0; i < participants.length; i++) {
+                const giver = participants[i];
+                const receiver = participants[(i + 1) % participants.length]; // 순환하도록 설정
+                resultMember.push([giver, receiver])
+            }
+    
+            let descript = `
+                ----------------------------------------
+                1번째 | <@${eachManito[0]}> --> <@${eachManito[1]}>
+                2번째 | <@${eachManito[1]}> --> <@${eachManito[0]}>
+                3번째 | <@${eachManito[2]}> --> <@${eachManito[3]}>
+                4번째 | <@${eachManito[3]}> --> <@${eachManito[2]}>
+                ----------------------------------------
+            `
+            let desNum = 5
+            for (const i of resultMember) {
+                descript += `${desNum}번째 | <@${i[0]}> --> <@${i[1]}> \n`
+                desNum++
+            }
+            descript += `
+                ----------------------------------------
+                예외처리 (참가 안함)
+            `
+            for (const i of exceptUser) {
+                descript += `<@${i}>\n`
+                desNum++
+            }
+            descript += "----------------------------------------"
+    
+    
+            // Embed 메시지를 생성하여 프로필 사진을 포함시킵니다.
+            const embed = new Discord.MessageEmbed()
+                .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+                .setTitle("마티또 추첨!")
+                .setDescription(descript)
+                .setColor("#F280EB")
+                .setThumbnail("https://a.redstar.moe") // 프로필 사진을 Embed에 추가
+                .setTimestamp(new Date())
+                .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+        
+            message.channel.send(embed);
+        }
+
+
     
     ////////////////////////////////////////////////////////////이스터 애그/////////////////////////////////////////////////////////////
     

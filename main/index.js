@@ -43,12 +43,12 @@ client.on('guildMemberAdd', (member) => {
     
         // Embed 메시지를 생성하여 프로필 사진을 포함시킵니다.
         const embed = new Discord.MessageEmbed()
-            .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
             .setTitle(`안녕하세요, \`${member.user.tag}\` 님! 서버에 가입하신 것을 환영합니다!`)
             .setColor("#F280EB")
             .setThumbnail(member.user.displayAvatarURL()) // 프로필 사진을 Embed에 추가
             .setTimestamp(new Date())
-            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
         channel.send(`<@${member.user.id}>`, embed);
     } catch (error) {
@@ -64,12 +64,12 @@ client.on('guildMemberRemove', (member) => {
     
         // Embed 메시지를 생성하여 프로필 사진을 포함시킵니다.
         const embed = new Discord.MessageEmbed()
-            .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
             .setTitle(`안녕히 가세요, \`${member.user.tag}\` 님! 서버에서 나가셨습니다.`)
             .setColor("#FF5733")
             .setThumbnail(member.user.displayAvatarURL()) // 프로필 사진을 Embed에 추가
             .setTimestamp(new Date())
-            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
         channel.send(`<@${member.user.id}>`, embed);
     } catch (error) {
@@ -147,11 +147,11 @@ try {
         if(message.content === `${prefix}명령어`) {
     
             const embed = new Discord.MessageEmbed()
-            .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
             .setTitle("명령어")
             .setColor("FF0000")
             
-            .setThumbnail("https://collabo.lol/img/discord/setThumbnail.webp")
+            .setThumbnail("https://collabo.lol/img/setThumbnail.webp")
             
             .addFields(
                 {name:"!명령어", value:"명령어를 보여줍니다."},
@@ -165,7 +165,7 @@ try {
             )
     
             .setTimestamp(new Date())
-            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
             message.channel.send(embed);
     
@@ -176,12 +176,12 @@ try {
             const 투표내용 /*(변수)*/ = message.content.substring(3);
     
             const embed = new Discord.MessageEmbed()
-            .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
             .setTitle("👇 투표내용  (Voting contents)")
             .setDescription(투표내용)
             .setColor("FF0000")
     
-            .setThumbnail("https://collabo.lol/img/discord/setThumbnail.webp")
+            .setThumbnail("https://collabo.lol/img/setThumbnail.webp")
     
             message.reply(embed)
             .then((msg) => {
@@ -193,11 +193,11 @@ try {
         if(message.content === `${prefix}홈페이지` || message.content.startsWith(`${prefix}홈페이지`)) {
     
             const embed = new Discord.MessageEmbed()
-            .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
             .setTitle("명령어")
             .setColor("FF0000")
             
-            .setThumbnail("https://collabo.lol/img/discord/setThumbnail.webp")
+            .setThumbnail("https://collabo.lol/img/setThumbnail.webp")
             
             .addFields(
                 {name:"https://collabo.lol/pokemon", value:"마크 1.12.2 포켓몬 서버 홈페이지"},
@@ -205,7 +205,7 @@ try {
             )
     
             .setTimestamp(new Date())
-            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
             message.channel.send(embed);
         }
@@ -216,11 +216,11 @@ try {
     
         if(message.content === `${prefix}github` || message.content === `${prefix}깃허브`) {
             const embed = new Discord.MessageEmbed()
-            .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
             .setTitle("명령어")
             .setColor("FF0000")
             
-            .setThumbnail("https://collabo.lol/img/discord/setThumbnail.webp")
+            .setThumbnail("https://collabo.lol/img/setThumbnail.webp")
             
             .addFields(
                 {name:"https://github.com/skchqhdpdy", value:"<@399535550832443392>의 github 페이지"},
@@ -229,7 +229,7 @@ try {
             )
     
             .setTimestamp(new Date())
-            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
             message.channel.send(embed);
         }

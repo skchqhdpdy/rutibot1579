@@ -363,13 +363,13 @@ try {
     
             // Embed 메시지를 생성하여 프로필 사진을 포함시킵니다.
             const embed = new Discord.MessageEmbed()
-                .setAuthor("루티봇#1579", "https://collabo.lol/img/discord/setAuthor.webp")
+                .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
                 .setTitle("마티또 추첨!")
                 .setDescription(descript)
                 .setColor("#F280EB")
-                .setThumbnail("https://a.redstar.moe") // 프로필 사진을 Embed에 추가
+                .setThumbnail("https://collabo.lol/img/마니또.jpg") // 프로필 사진을 Embed에 추가
                 .setTimestamp(new Date())
-                .setFooter("Made By aodd.xyz", "https://collabo.lol/img/discord/setFooter.webp")
+                .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
         
             message.channel.send(embed);
         }

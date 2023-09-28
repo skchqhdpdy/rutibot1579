@@ -13,6 +13,8 @@ const { prefix, token } = require("./config.json");
 } = require('./config.json') */
 const fs = require('fs');
 const { log } = require('console');
+const { channel } = require('diagnostics_channel');
+const { clearTimeout } = require('timers');
 
 client.setMaxListeners(0)
 
@@ -145,7 +147,9 @@ client.on('messageReactionRemove', async (reaction, user) => {
 //계란 깨기 게임
 let isGameActive_eggGame = false; // 게임 진행 여부
 let brokeEggNumber_eggGame = []; // 날 계란 번호들
-let players_eggGame = {}; // 이미 나온 번호 기록
+let players_eggGame = {}; // 이미 나온 번호(유저) 기록
+let channelID_eggGame = "" // 게임을 시작한 채널의 ID
+let timeoutID_eggGame = "" // timeout ID
 
 try {
     client.on('message', (message) => {
@@ -189,6 +193,7 @@ try {
             .addFields(
                 {name:"!계란깨기시작", value:"계란깨기 게임을 시작합니다."},
                 {name:"!계란깨기 {숫자}", value:"예시로 `!계란깨기 44` 를 입력하면 되고 숫자의 범위는 1~100입니다."},
+                {name:"!계란깨기중지", value:"계란깨기 게임을 중지합니다."},
             )
     
             .setTimestamp(new Date())
@@ -403,21 +408,49 @@ try {
         }
 
         //계란 깨기 게임
+        function exitEggGame(message, msg) {
+            clearTimeout(timeoutID_eggGame)
+            console.log(msg)
+            message.channel.send(msg);
+            message.channel.send("게임 오버! \n----------------------------------------------------------------------------------------------------")
+            isGameActive_eggGame = false;
+            brokeEggNumber_eggGame = []
+            players_eggGame = {}
+            channelID_eggGame = ""
+            timeoutID_eggGame = ""
+            return
+        }
+        function timerEggGame(message) {
+            const r = setTimeout(() => {
+                const msg = "5분간 이용하지 않아 계란깨기 게임이 중지됬습니다."
+                exitEggGame(message, msg)
+            }, 300000);
+            return r
+        }
+
         if (message.content === (`${prefix}계란깨기시작`) && !isGameActive_eggGame) {
             // 게임 시작
             isGameActive_eggGame = true;
+            channelID_eggGame = message.channel.id
+            timeoutID_eggGame = timerEggGame(message)
 
             console.log("")
-            for (let i = 0; i < 5; i++) {
-                brokeEggNumber_eggGame[i] = Math.floor(Math.random() * 100) + 1; // 1에서 100 사이의 랜덤 숫자
-                console.log(`날 계란 ${i + 1}의 번호: ${brokeEggNumber_eggGame[i]}`);
+            for (let i = 0; i < 5;) {
+                let r = Math.floor(Math.random() * 100) + 1
+                if (brokeEggNumber_eggGame.indexOf() === -1) {
+                    brokeEggNumber_eggGame.push(r) // 1에서 100 사이의 랜덤 숫자
+                    console.log(`날 계란 ${i + 1}의 번호: ${brokeEggNumber_eggGame[i]}`);
+                    i++
+                }
             }
-            console.log("")
 
             message.channel.send(`계란깨기 게임을 시작합니다!`);
-        } else if (message.content === (`${prefix}계란깨기시작`) && isGameActive_eggGame) {
-            message.reply(`게임이 진행중 입니다!`);
-        } else if (message.content.startsWith(`${prefix}계란깨기`)) {
+        } else if (message.content === (`${prefix}계란깨기시작`) && isGameActive_eggGame) { // 더블 실행 방지
+            message.reply(`<#${channelID_eggGame}> 채널에서 게임이 진행중 입니다!`);
+        } else if (message.content === (`${prefix}계란깨기중지`) && isGameActive_eggGame) { //게임 중지 코드
+            const msg = `<@${message.author.id}>님이 게임을 종료하였습니다.`
+            exitEggGame(message, msg)
+        } else if (message.content.startsWith(`${prefix}계란깨기`)) { // 게임 진행 코드
             if (!isGameActive_eggGame) {
                 message.reply("`!계란깨기시작` 명령어로 게임을 먼저 시작하세요!")
             } else {
@@ -436,11 +469,8 @@ try {
     
                 if (brokeEggNumber_eggGame.includes(userNumber)) {
                     // 날 계란을 깼을 경우
-                    message.reply(`님이 날 계란 ${brokeEggNumber_eggGame} 중 (${userNumber}번 계란)을 깼습니다.`);
-                    message.reply("게임 오버!")
-                    isGameActive_eggGame = false;
-                    brokeEggNumber_eggGame = []
-                    players_eggGame = {}
+                    const msg = `<@${message.author.id}>님이 날 계란 ${brokeEggNumber_eggGame} 중 (${userNumber}번 계란)을 깼습니다.`
+                    exitEggGame(message, msg)
                 } else {
                     // 삶은 계란일 경우
                     players_eggGame[userNumber] = message.author.id;
@@ -449,6 +479,9 @@ try {
                 }
             }
         
+        } else if (message.channel.id === channelID_eggGame && message.content.startsWith(prefix)) { //타임아웃 갱신
+            clearTimeout(timeoutID_eggGame)
+            timeoutID_eggGame = timerEggGame(message)
         }
 
 

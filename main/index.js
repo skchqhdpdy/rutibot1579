@@ -142,6 +142,11 @@ client.on('messageReactionRemove', async (reaction, user) => {
 });
 
 //메인
+//계란 깨기 게임
+let isGameActive_eggGame = false; // 게임 진행 여부
+let brokeEggNumber_eggGame = []; // 날 계란 번호들
+let players_eggGame = {}; // 이미 나온 번호 기록
+
 try {
     client.on('message', (message) => {
         if(message.content === `${prefix}명령어`) {
@@ -156,22 +161,42 @@ try {
             .addFields(
                 {name:"!명령어", value:"명령어를 보여줍니다."},
                 {name:"!봇 초대", value:"봇 초대 주소입니다."},
-                {name:"!ping", value:"봇의 서버핑을 보여줍니다. (음악봇 !ping이랑 중복됨)"},
-                {name:"!투표", value:"O 또는 X 로 투표를 할수있습니다. \n사용법:!투표 투표할 내용"},
+                {name:"!ping", value:"봇의 서버핑을 보여줍니다. (음악봇 `!ping`이랑 중복됨)"},
+                {name:"!투표", value:"O 또는 X 로 투표를 할수있습니다. \n사용법:`!투표 투표할 내용`"},
                 {name:"!홈페이지", value:"운영중인 홈페이지 주소를 보여줍니다."},
                 {name:"!github", value:"깃허브 페이지"},
-                {name:"!clear {지울 만큼의 숫자}", value:"!clear 명렁어를 `포함한` 개수의 메세지 삭제"},
-                {name:"!help (h)", value:"!help (h) 음악봇 관련 명령어 입니다."},
+                {name:"!clear {지울 만큼의 숫자}", value:"`!clear` 명렁어를 `포함한` 개수의 메세지 삭제"},
+                {name:"!help (!h)", value:"`!help` (`!h`) 음악봇 관련 명령어 입니다."},
                 {name:"!마니또 추첨", value:"마니또를 추첨하는 명령어 입니다. (합방 시작전에 관리자들 끼리 합의 하에 추첨을 하고 그걸 고정해서 사용할 예정)"},
+                {name:"!게임", value:"`!게임` 명령어로 어떤 게임들이 있는지 확인하는 명령어 입니다."},
             )
     
             .setTimestamp(new Date())
             .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
             message.channel.send(embed);
-    
         }
+
+        if(message.content === `${prefix}게임`) {
     
+            const embed = new Discord.MessageEmbed()
+            .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
+            .setTitle("명령어")
+            .setColor("FF0000")
+            
+            .setThumbnail("https://collabo.lol/img/setThumbnail.webp")
+            
+            .addFields(
+                {name:"!계란깨기시작", value:"계란깨기 게임을 시작합니다."},
+                {name:"!계란깨기 {숫자}", value:"예시로 `!계란깨기 44` 를 입력하면 되고 숫자의 범위는 1~100입니다."},
+            )
+    
+            .setTimestamp(new Date())
+            .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
+    
+            message.channel.send(embed);
+        }
+
         if(message.content.substring(0,3) === `${prefix}투표`) {
             
             const 투표내용 /*(변수)*/ = message.content.substring(3);
@@ -268,6 +293,9 @@ try {
         }
 
         //마니또 추첨
+        // 일정-알려주세요 채널에 메세지도 추가로 보내기 기능 추가하기
+        // !마니또 추첨 확정
+        //@해당스트리머 의 마니또는 @스트리머 입니다
         if (message.content === `${prefix}마니또 추첨`) {
             const guildId = '1107568623050047550'; // 스트리머 역할을 찾을 서버(길드)의 ID를 입력하세요.
             const roleToFind = '스트리머'; // 찾을 역할의 이름을 입력하세요.
@@ -372,6 +400,55 @@ try {
                 .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
         
             message.channel.send(embed);
+        }
+
+        //계란 깨기 게임
+        if (message.content === (`${prefix}계란깨기시작`) && !isGameActive_eggGame) {
+            // 게임 시작
+            isGameActive_eggGame = true;
+
+            console.log("")
+            for (let i = 0; i < 5; i++) {
+                brokeEggNumber_eggGame[i] = Math.floor(Math.random() * 100) + 1; // 1에서 100 사이의 랜덤 숫자
+                console.log(`날 계란 ${i + 1}의 번호: ${brokeEggNumber_eggGame[i]}`);
+            }
+            console.log("")
+
+            message.channel.send(`계란깨기 게임을 시작합니다!`);
+        } else if (message.content === (`${prefix}계란깨기시작`) && isGameActive_eggGame) {
+            message.reply(`게임이 진행중 입니다!`);
+        } else if (message.content.startsWith(`${prefix}계란깨기`)) {
+            if (!isGameActive_eggGame) {
+                message.reply("`!계란깨기시작` 명령어로 게임을 먼저 시작하세요!")
+            } else {
+                // 게임 진행 중
+                const userNumber = parseInt(message.content.split(' ')[1]);
+    
+                if (isNaN(userNumber) || userNumber < 1 || userNumber > 100) {
+                    message.reply('1에서 100 사이의 숫자를 입력하세요!');
+                    return;
+                }
+    
+                if (players_eggGame[userNumber]) {
+                    message.reply(`${userNumber}는 <@${players_eggGame[userNumber]}>님이 입력했던 숫자입니다. 다른 숫자를 입력하세요!`);
+                    return;
+                }
+    
+                if (brokeEggNumber_eggGame.includes(userNumber)) {
+                    // 날 계란을 깼을 경우
+                    message.reply(`님이 날 계란 ${brokeEggNumber_eggGame} 중 (${userNumber}번 계란)을 깼습니다.`);
+                    message.reply("게임 오버!")
+                    isGameActive_eggGame = false;
+                    brokeEggNumber_eggGame = []
+                    players_eggGame = {}
+                } else {
+                    // 삶은 계란일 경우
+                    players_eggGame[userNumber] = message.author.id;
+                    const remainingEggs = 100 - Object.keys(players_eggGame).length;
+                    message.reply(`${userNumber}는 삶은 계란입니다. 남은 계란의 수는 ${remainingEggs}개 입니다.`);
+                }
+            }
+        
         }
 
 

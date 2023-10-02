@@ -16,30 +16,38 @@ const { log } = require('console');
 const { channel } = require('diagnostics_channel');
 const { clearTimeout } = require('timers');
 
-client.setMaxListeners(0)
+try {
+    client.setMaxListeners(0)
+} catch (error) {
+    console.error(`client.setMaxListeners(0) 예외처리 됨 | error = ${error}`)
+}
 
-client.on('ready', () => {
-    console.log('루티봇#1579 온라인!');
-	client.user.setActivity('!명령어', { type: 'LISTENING' })
-
-    //rainbow color
-    //보류
-    /* let guild = client.guilds.cache.get(serverID) 
-    if(!guild) throw `[ Error ] Server Peida Nashod: ${serverID}` 
-
-    let role = guild.roles.cache.find(u => u.id === roleID) 
-    if(!role) throw `[ Error ] Role Peida Nashod, Server Name: ${guild.name}` 
+try {
+    client.on('ready', () => {
+        console.log('루티봇#1579 온라인!');
+        client.user.setActivity('!명령어', { type: 'LISTENING' })
     
-    if(interval < 60000) console.log(`\nRainbow Color | [!!!] Khatarnake Havaset bashe`) 
-
-    setInterval(() => {
-        role.edit({color: 'RANDOM'}).catch(err => console.log(`[ Error ] An error occurred during the role change.`));
-    }, interval) */
-});
+        //rainbow color
+        //보류
+        /* let guild = client.guilds.cache.get(serverID) 
+        if(!guild) throw `[ Error ] Server Peida Nashod: ${serverID}` 
+    
+        let role = guild.roles.cache.find(u => u.id === roleID) 
+        if(!role) throw `[ Error ] Role Peida Nashod, Server Name: ${guild.name}` 
+        
+        if(interval < 60000) console.log(`\nRainbow Color | [!!!] Khatarnake Havaset bashe`) 
+    
+        setInterval(() => {
+            role.edit({color: 'RANDOM'}).catch(err => console.log(`[ Error ] An error occurred during the role change.`));
+        }, interval) */
+    });
+} catch (error) {
+    console.error(`ready 전체 예외처리 됨 | error = ${error}`)
+}
 
 //유저 디코입장
-client.on('guildMemberAdd', (member) => {
-    try {
+try {
+    client.on('guildMemberAdd', (member) => {
         const channel = member.guild.channels.cache.find((ch) => ch.id === '1149986137377620029');
         if (!channel) return;
     
@@ -53,14 +61,14 @@ client.on('guildMemberAdd', (member) => {
             .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
         channel.send(`<@${member.user.id}>`, embed);
-    } catch (error) {
-        console.log(`guildMemberAdd 예외처리 됨 | error = ${error}`)
-    }
+    });
+} catch (error) {
+    console.error(`guildMemberAdd 전체 예외처리 됨 | error = ${error}`)
+}
 
-});
 //유저 디코 퇴장
-client.on('guildMemberRemove', (member) => {
-    try {
+try {
+    client.on('guildMemberRemove', (member) => {
         const channel = member.guild.channels.cache.find((ch) => ch.id === '1149986137377620029');
         if (!channel) return;
     
@@ -74,10 +82,10 @@ client.on('guildMemberRemove', (member) => {
             .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
         channel.send(`<@${member.user.id}>`, embed);
-    } catch (error) {
-        console.log(`guildMemberRemove 예외처리 됨 | error = ${error}`)
-    }
-});
+    });
+} catch (error) {
+    console.error(`guildMemberRemove 전체 예외처리 됨 | error = ${error}`)
+}
 
 
 //zira봇 역할
@@ -86,6 +94,7 @@ const MESSAGE_ID = '1145201143023157298'; // 이벤트를 감지할 메시지 ID
 const EMOJI_NAME = "minecraft"; // 반응에 사용할 이모지 이름
 const ROLE_ID = '1145215725645074442'; // 부여할 역할 ID
 
+//얘는 예외처리 밖에다 안함
 function sendLogDiscord(channelId, content) {
     try {
         // 지정된 채널을 찾아서 메시지를 보냅니다.
@@ -96,12 +105,12 @@ function sendLogDiscord(channelId, content) {
             console.log(`<#${channelId}> 해당 채널을 찾을 수 없음`)
         }
     } catch (error) {
-        console.log(`sendLogDiscord() 함수 예외처리 됨 | error = ${error}`)
+        console.error(`sendLogDiscord() 함수 예외처리 됨 | error = ${error}`)
     }
 }
 
-client.on('messageReactionAdd', async (reaction, user) => {
-    try {
+try {
+    client.on('messageReactionAdd', async (reaction, user) => {
         // 반응한 메시지가 지정한 채널에 있는지 확인합니다.
         if (reaction.message.channel.id !== CHANNEL_ID) return;
         
@@ -116,13 +125,13 @@ client.on('messageReactionAdd', async (reaction, user) => {
                 sendLogDiscord("1152894841236246558", msg)
             }
         }
-    } catch (error) {
-        console.log(`messageReactionAdd 함수 예외처리 됨 | error = ${error}`)
-    }
-    
-});
-client.on('messageReactionRemove', async (reaction, user) => {
-    try {
+    });
+} catch (error) {
+    console.error(`messageReactionAdd 함수 전체 예외처리 됨 | error = ${error}`)
+}
+
+try {
+    client.on('messageReactionRemove', async (reaction, user) => {
         // 반응한 메시지가 지정한 채널에 있는지 확인합니다.
         if (reaction.message.channel.id !== CHANNEL_ID) return;
     
@@ -137,11 +146,10 @@ client.on('messageReactionRemove', async (reaction, user) => {
                 sendLogDiscord("1152894841236246558", msg)
             }
         }
-    } catch (error) {
-        console.log(`messageReactionRemove 함수 예외처리 됨 | error = ${error}`)
-    }
-    
-});
+    });
+} catch (error) {
+    console.error(`messageReactionRemove 함수 전체 예외처리 됨 | error = ${error}`)
+}
 
 //메인
 //계란 깨기 게임
@@ -328,7 +336,7 @@ try {
             streamerMembers.forEach((member) => {
                 //console.log(`유저 ID: ${member.user.id}, 유저 이름: ${member.user.tag}`);
                 // @스트리머 역할중 3명 제외
-                if (member.user.id !== "657145673296117760" && member.user.id !== "472607419474640897" && member.user.id !== "448274272104873984") {
+                if (member.user.id !== "657145673296117760" && member.user.id !== "472607419474640897" && member.user.id !== "448274272104873984" && member.user.id !== "1091687087058731048") {
                     participants.push(member.user.id)
                 } else {
                     exceptUser.push(member.user.id)
@@ -574,7 +582,7 @@ try {
     }
     
 } catch (error) {
-    console.log(`main 전체 예외처리 됨 | error = ${error}`)
+    console.error(`main 전체 예외처리 됨 | error = ${error}`)
 }
 
 client.login(token);

@@ -61,6 +61,22 @@ try {
             .setFooter("Made By aodd.xyz", "https://collabo.lol/img/setFooter.webp")
     
         channel.send(`<@${member.user.id}>`, embed);
+
+        // 역할을 추가할 역할 ID를 가져옵니다.
+        const roleIDToAdd = '1158693253999243325';
+
+        // 역할을 추가합니다.
+        const roleToAdd = member.guild.roles.cache.get(roleIDToAdd);
+        if (roleToAdd) {
+            try {
+                member.roles.add(roleToAdd);
+                sendLogDiscord("1152894841236246558", `<@${member.user.id}>에게 <@&${roleIDToAdd}> 인증되지 않은 역할 부여함`)
+            } catch (error) {
+                console.error(`역할 추가 중 오류 발생: ${error}`);
+            }
+        } else {
+            console.error(`역할을 찾을 수 없음: ${roleIDToAdd}`);
+        }
     });
 } catch (error) {
     console.error(`guildMemberAdd 전체 예외처리 됨 | error = ${error}`)

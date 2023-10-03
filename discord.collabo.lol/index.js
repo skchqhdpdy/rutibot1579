@@ -19,7 +19,7 @@ function loginDiscord(req, res, next) {
 
 const clientID = "1143492519276060752",
   clientSecret = "bEZu3roc6EGeNqAKej5UczeVOw7SIjGn",
-  callbackURL = "https://discord.gg/Yhgquyyuw5";
+  callbackURL = "https://discord.gg/7bMdVQthde";
 
 passport.serializeUser(function(user, done) {
   done(null, user);

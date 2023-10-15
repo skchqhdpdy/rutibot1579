@@ -344,15 +344,24 @@ try {
     
             // 마니또 참가자 목록
             // 끼음, 복미, 오소희, 솜팡, 남야 님은 반확정이라서 넣어줘용
+
             // 저랑 쥐님이랑 공허님(hyp로시작하는분)빼고
+            // 레오욘
+            // 아카나, 게임조선, 예외처리해주세요
+            // (쥐 님은 서버 나감)
             const participants = []; // 필요한 참가자 수만큼 추가하세요.
             const exceptUser = []
     
             // 스트리머 역할을 가진 멤버의 ID와 이름을 출력합니다.
             streamerMembers.forEach((member) => {
                 //console.log(`유저 ID: ${member.user.id}, 유저 이름: ${member.user.tag}`);
-                // @스트리머 역할중 3명 제외
-                if (member.user.id !== "657145673296117760" && member.user.id !== "472607419474640897" && member.user.id !== "448274272104873984" && member.user.id !== "1091687087058731048") {
+                // @스트리머 역할중 6명 제외
+                if (member.user.id !== "657145673296117760"
+                 && member.user.id !== "472607419474640897"
+                 && member.user.id !== "448274272104873984"
+                 && member.user.id !== "1091687087058731048"
+                 && member.user.id !== "608142953759637534"
+                 && member.user.id !== "901685620768915526") {
                     participants.push(member.user.id)
                 } else {
                     exceptUser.push(member.user.id)

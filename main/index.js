@@ -272,7 +272,7 @@ try {
         if(message.content === `${prefix}github` || message.content === `${prefix}깃허브`) {
             const embed = new Discord.MessageEmbed()
             .setAuthor("루티봇#1579", "https://collabo.lol/img/setAuthor.webp")
-            .setTitle("명령어")
+            .setTitle("Github links")
             .setColor("FF0000")
             
             .setThumbnail("https://collabo.lol/img/setThumbnail.webp")

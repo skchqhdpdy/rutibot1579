@@ -1,3 +1,3 @@
 @echo off
-node twitch.js
+node 1_twitch.js
 pasue

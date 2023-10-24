@@ -2,8 +2,8 @@
     "db": {
         "host": "localhost",
         "port": 3306,
-        "username": "twitch",
-        "password": "twitch2024**",
-        "database": "twitch_streamer_collabo"
+        "username": "",
+        "password": "",
+        "database": ""
     }
 }

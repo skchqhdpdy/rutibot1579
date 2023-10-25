@@ -9,11 +9,11 @@ import random
 
 import functions
 
-with open('config.json') as config_file:
-    config = json.load(config_file)
+config = functions.db.select("SELECT * FROM rutibot_setting")
 
 prefix = config["prefix"]
 token = config["token"]
+discord_log_channel = config["discord_log_channel"]
 
 intents = discord.Intents.default()
 intents.typing = False
@@ -52,7 +52,7 @@ async def guildMemberAdd(member):
     if role_to_add is not None:
         try:
             await member.add_roles(role_to_add)
-            await functions.send_log_discord(bot, '1152894841236246558', f'<@{member.id}>에게 <@&{role_id_to_add}> 인증되지 않은 역할 부여함')
+            await functions.send_log_discord(bot, discord_log_channel, f'<@{member.id}>에게 <@&{role_id_to_add}> 인증되지 않은 역할 부여함')
         except Exception as error:
             log.error(f'역할 추가 중 오류 발생: {error}')
     else:
@@ -76,10 +76,16 @@ async def guildMemberRemove(member):
     await channel.send(f'<@{member.id}>', embed=embed)
 
 #zira봇 역할
-CHANNEL_ID = 1107570796555149353  # 이벤트를 감지할 채널 ID
+""" CHANNEL_ID = 1107570796555149353  # 이벤트를 감지할 채널 ID
 MESSAGE_ID = 1145201143023157298  # 이벤트를 감지할 메시지 ID
 EMOJI_NAME = "minecraft"  # 반응에 사용할 이모지 이름
-ROLE_ID = 1145215725645074442  # 부여할 역할 ID
+ROLE_ID = 1145215725645074442  # 부여할 역할 ID """
+
+zira = functions.db.select("SELECT * FROM rutibot_zira WHERE type = 'minecraft'")
+CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
+MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
+EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
+ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -95,7 +101,7 @@ async def on_raw_reaction_add(payload):
             await member.add_roles(role)
             msg = f"[{member.name}]에게 [{role.name}] 역할을 추가했습니다."
             log.info(msg)
-            functions.send_log_discord(bot, "1152894841236246558", msg)
+            functions.send_log_discord(bot, discord_log_channel, msg)
 
 @bot.event
 async def on_raw_reaction_remove(payload):
@@ -111,16 +117,19 @@ async def on_raw_reaction_remove(payload):
             await member.remove_roles(role)
             msg = f"[{member.name}]에게 [{role.name}] 역할을 제거했습니다."
             log.info(msg)
-            functions.send_log_discord(bot, "1152894841236246558", msg)
+            functions.send_log_discord(bot, discord_log_channel, msg)
 
 
 #메인
 #계란 깨기 게임
-is_game_active_egg_game = False  # 게임 진행 여부
-broke_egg_numbers_egg_game = []  # 날 계란 번호들
-players_egg_game = {}  # 이미 나온 번호(유저) 기록
-channel_id_egg_game = ""  # 게임을 시작한 채널의 ID
-timeout_id_egg_game = ""  # timeout ID
+""" game_egg_config = functions.getConfig("config.json")
+
+#의미 없을거 같음
+isGameActive_eggGame = game_egg_config["game"]["egg"]["isGameActive_eggGame"]  # 게임 진행 여부
+brokeEggNumber_eggGame = game_egg_config["game"]["egg"]["brokeEggNumber_eggGame"]  # 날 계란 번호들
+players_eggGame = game_egg_config["game"]["egg"]["players_eggGame"]  # 이미 나온 번호(유저) 기록
+channelID_eggGame = game_egg_config["game"]["egg"]["channelID_eggGame"]  # 게임을 시작한 채널의 ID
+timeoutID_eggGame = game_egg_config["game"]["egg"]["timeoutID_eggGame"]  # timeout ID """
 
 @bot.command(aliases=["명령어"])
 async def commands(ctx):
@@ -347,9 +356,90 @@ players_eggGame = {}
 channelID_eggGame = ""
 timeoutID_eggGame = None
 # TODO 나중에 기능 만들기
-@bot.command(aliases=["계란깨기"])
+""" @bot.command(aliases=["계란깨기"])
 async def egg(ctx):
-    pass
+    pass """
+@bot.event
+async def on_message(message):
+    log.debug("event")
+    global isGameActive_eggGame
+    global brokeEggNumber_eggGame
+    global players_eggGame
+    global channelID_eggGame
+    global timeoutID_eggGame
+
+    if message.author == bot.user:
+        return
+
+    if message.content.startswith(prefix):
+        if message.content == f'{prefix}계란깨기시작' and not isGameActive_eggGame:
+            isGameActive_eggGame = True
+            channelID_eggGame = message.channel.id
+            timeoutID_eggGame = timerEggGame(message)
+
+            await message.channel.send('계란깨기 게임을 시작합니다!')
+
+            for i in range(5):
+                r = random.randint(1, 100)
+                while r in brokeEggNumber_eggGame:
+                    r = random.randint(1, 100)
+                brokeEggNumber_eggGame.append(r)
+                print(f'날 계란 {i + 1}의 번호: {r}')
+
+        elif message.content == f'{prefix}계란깨기시작' and isGameActive_eggGame:
+            await message.channel.send(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
+        
+        elif message.content == f'{prefix}계란깨기중지' and isGameActive_eggGame:
+            msg = f'<@{message.author.id}>님이 게임을 종료하였습니다.'
+            exitEggGame(message, msg)
+        
+        elif message.content.startswith(f'{prefix}계란깨기'):
+            if not isGameActive_eggGame:
+                await message.reply(f'`{prefix}계란깨기시작` 명령어로 게임을 먼저 시작하세요!')
+            else:
+                userNumber = int(message.content.split(' ')[1])
+
+                if userNumber < 1 or userNumber > 100:
+                    await message.reply('1에서 100 사이의 숫자를 입력하세요!')
+                elif userNumber in players_eggGame:
+                    await message.reply(f'{userNumber}는 <@{players_eggGame[userNumber]}>님이 입력했던 숫자입니다. 다른 숫자를 입력하세요!')
+                elif userNumber in brokeEggNumber_eggGame:
+                    msg = f'<@{message.author.id}>님이 날 계란 {brokeEggNumber_eggGame} 중 ({userNumber}번 계란)을 깼습니다.'
+                    exitEggGame(message, msg)
+                else:
+                    players_eggGame[userNumber] = message.author.id
+                    remainingEggs = 100 - len(players_eggGame)
+                    await message.reply(f'{userNumber}는 삶은 계란입니다. 남은 계란의 수는 {remainingEggs}개 입니다.')
+
+        elif message.channel.id == channelID_eggGame and message.content.startswith(prefix):
+            if timeoutID_eggGame is not None:
+                timeoutID_eggGame.cancel()
+            timeoutID_eggGame = timerEggGame(message)
+
+def timerEggGame(message):
+    async def game_timeout():
+        msg = '5분간 이용하지 않아 계란깨기 게임이 중지되었습니다.'
+        exitEggGame(message, msg)
+
+    return bot.loop.call_later(300, game_timeout)
+
+def exitEggGame(message, msg):
+    global isGameActive_eggGame
+    global brokeEggNumber_eggGame
+    global players_eggGame
+    global channelID_eggGame
+    global timeoutID_eggGame
+
+    if timeoutID_eggGame is not None:
+        timeoutID_eggGame.cancel()
+    print(msg)
+    message.channel.send(msg)
+    message.channel.send('게임 오버!\n--------------------------------------')
+    isGameActive_eggGame = False
+    brokeEggNumber_eggGame = []
+    players_eggGame = {}
+    channelID_eggGame = None
+    timeoutID_eggGame = None
 
 ##////////////////////////////////////////////////////////////이스터 애그/////////////////////////////////////////////////////////////##
 

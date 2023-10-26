@@ -24,7 +24,6 @@ discord_log_channel = config["discord_log_channel"]
 welcome_channel = config["welcome_channel"]
 welcome_role_id = config["welcome_role_id"]
 #Twitch_token = config["Twitch_token"]
-secretcode_status = True if config["secretcode_status"] == 1 else False
 
 intents = discord.Intents.default()
 intents.typing = False

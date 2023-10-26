@@ -333,7 +333,7 @@ async def on_message(message):
             # 레오욘
             # 아카나, 게임조선, 예외처리해주세요
             # (쥐 님은 서버 나감)
-            # 유채란, 하니
+            # 유채란, 하니, 하야애
 
             participants = []
             except_users = [
@@ -344,7 +344,8 @@ async def on_message(message):
                 608142953759637534, 
                 901685620768915526,
                 911662717037846599,
-                1075352635961524224
+                1075352635961524224,
+                506451468719751178
             ]
 
             for member in streamer_members:

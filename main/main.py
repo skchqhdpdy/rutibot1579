@@ -24,6 +24,8 @@ discord_log_channel = config["discord_log_channel"]
 welcome_channel = config["welcome_channel"]
 welcome_role_id = config["welcome_role_id"]
 #Twitch_token = config["Twitch_token"]
+#manito_category_id = config["manito_category_id"]
+manager_role_id = config["manager_role_id"]
 
 intents = discord.Intents.default()
 intents.typing = False
@@ -173,7 +175,7 @@ async def on_message(message):
         embed.add_field(name=f'{prefix}게임', value=f'`{prefix}게임` 명령어로 어떤 게임들이 있는지 확인하는 명령어 입니다.')
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-        await message.channel.send(embed=embed)
+        await message.reply(embed=embed)
 
     if message.content == f"{prefix}게임":
         embed = discord.Embed(
@@ -187,7 +189,7 @@ async def on_message(message):
         embed.add_field(name=f'{prefix}계란깨기종료', value='계란깨기 게임을 종료합니다.')
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-        await message.channel.send(embed=embed)
+        await message.reply(embed=embed)
 
 
     if message.content.startswith(f"{prefix}투표"):
@@ -206,7 +208,7 @@ async def on_message(message):
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        message = await message.channel.send(embed=embed)
+        message = await message.reply(embed=embed)
         await message.add_reaction("⭕")
         await message.add_reaction("❌")
 
@@ -222,7 +224,7 @@ async def on_message(message):
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        await message.channel.send(embed=embed)
+        await message.reply(embed=embed)
 
     if message.content == f"{prefix}서버주소" or message.content == f"{prefix}서버 주소" or message.content == f"{prefix}마크":
         await message.reply(f'`{prefix}홈페이지` 명령어를 사용해주세요!')
@@ -240,14 +242,14 @@ async def on_message(message):
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        await message.channel.send(embed=embed)
+        await message.reply(embed=embed)
 
     if message.content == f"{prefix}트위치":
-        await message.channel.send('<@399535550832443392> 야 너 기능 만들어!')
+        await message.reply('<@399535550832443392> 야 너 기능 만들어!')
 
     if message.content.startswith(f"{prefix}clear"):
         if not message.author.guild_permissions.manage_messages:
-            return await message.channel.send("권한이 없습니다.")
+            return await message.reply("권한이 없습니다.")
 
         try:
             amount = int(message.content.split(' ')[1])
@@ -255,10 +257,11 @@ async def on_message(message):
             amount = 0
 
         if amount < 1 or amount > 100:
-            await message.channel.send("1부터 100까지의 숫자만 입력하세요.")
+            await message.reply("1부터 100까지의 숫자만 입력하세요.")
             return
 
         await message.channel.purge(limit=amount + 1)
+        #무조건 message.channel.send 쓰기
         msg = await message.channel.send(f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 3초 후 삭제됩니다.")
         await asyncio.sleep(3)
         await msg.delete()
@@ -397,9 +400,10 @@ async def on_message(message):
             await message.reply(f"<t:{orderTime}> 에 마니또 확정됨!")
 
             guild = bot.get_guild(guild_id)
-            ct = discord.utils.get(guild.categories, id=1151159100256817202)
+            manito_category_id = functions.db.select("SELECT manito_category_id FROM rutibot_setting")["manito_category_id"]
+            ct = discord.utils.get(guild.categories, id=manito_category_id)
             ewol = []
-            for i in [member for member in guild.members if discord.utils.get(guild.roles, id=1108221862485430405) in member.roles]:
+            for i in [member for member in guild.members if discord.utils.get(guild.roles, id=manager_role_id) in member.roles]:
                 ewol.append(i.id)
 
             for chans in ct.channels:
@@ -429,6 +433,9 @@ async def on_message(message):
                         await msg_pin.pin()
 
         if selAll and not pick and not confirmed:
+            if not message.author.guild_permissions.manage_messages:
+                return await message.reply("권한이 없습니다.")
+
             mt = functions.db.select("SELECT * FROM rutibot_manito WHERE confirmed = 1 ORDER BY datetime DESC LIMIT 1")
             if mt is None:
                 log.error(f"mt | DB에 설정값이 존재 하지 않음!!!")
@@ -488,7 +495,7 @@ async def on_message(message):
                 channelID_eggGame = 'NULL',
                 start_time = 'NULL'
         """)
-        await message.channel.send(msg)
+        await message.reply(msg)
         await message.channel.send('게임 오버!\n--------------------------------------')
 
     if message.content == f'{prefix}계란깨기시작' and not isGameActive_eggGame:
@@ -501,7 +508,7 @@ async def on_message(message):
                 start_time = '{time()}'
         """)
 
-        await message.channel.send('계란깨기 게임을 시작합니다!')
+        await message.reply('계란깨기 게임을 시작합니다!')
 
         # 1부터 100까지의 숫자 중에서 5개를 선택
         brokeEggNumber_eggGame = random.sample(range(1, eggCountMax + 1), eggCount)
@@ -510,7 +517,7 @@ async def on_message(message):
         print(f"날 계란목록 : {brokeEggNumber_eggGame}")
 
     elif message.content == f'{prefix}계란깨기시작' and isGameActive_eggGame:
-        await message.channel.send(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
+        await message.reply(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
     
     elif (message.content == f'{prefix}계란깨기종료' or message.content == f'{prefix}계란깨기중지') and isGameActive_eggGame:
         msg = f'<@{message.author.id}>님이 게임을 종료하였습니다.'

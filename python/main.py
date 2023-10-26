@@ -290,9 +290,15 @@ async def on_message(message):
 
     if message.content.startswith(f"{prefix}마니또"):
         if "조회" in message.content:
-            sel = True
+            if "전체조회" in message.content:
+                sel = False
+                selAll = True
+            else:
+                sel = True
+                selAll = False
         else:
             sel = False
+            selAll = False
 
         if "추첨" in message.content:
             pick = True
@@ -302,10 +308,8 @@ async def on_message(message):
         if "확정" in message.content:
             if pick:
                 confirmed = True
-                log.info("마니또 확정! | 기능 만들기")
             else:
-                await message.reply(f"`{prefix}마니또 조회`, `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
-                return
+                return await message.reply(f"`{prefix}마니또 전체조회`(관리자용), `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
         else:
             confirmed = False
 
@@ -315,8 +319,7 @@ async def on_message(message):
             role = discord.utils.get(guild.roles, name=role_to_find)
 
             if not role:
-                print('역할을 찾을 수 없습니다.')
-                return
+                return await message.reply('역할을 찾을 수 없습니다.')
 
             # 스트리머 역할을 가진 멤버 목록을 추출합니다.
             streamer_members = [member for member in guild.members if role in member.roles]
@@ -384,12 +387,49 @@ async def on_message(message):
             functions.db.insert(f"INSERT INTO rutibot_manito (id, data_users, except_users, confirmed, datetime) VALUE ('NULL', '{json.dumps(member_lists)}', '{str(except_users)}', {confirmed}, {time()})")
         
         if confirmed:
-            # TODO
-            msg = "위에서 기능 만들어서 연결하기 (각 채널로 전송)"
-            log.debug(msg)
-            await message.reply(msg)
+            mt = functions.db.select("SELECT * FROM rutibot_manito WHERE confirmed = 1 ORDER BY datetime DESC LIMIT 1")
+            if mt is None:
+                log.error(f"mt | DB에 설정값이 존재 하지 않음!!!")
+                return await message.reply("마니또 추첨 확정 데이터가 없습니다!")
+            data_users = json.loads(mt["data_users"])
+            except_users = json.loads(mt["except_users"])
+            orderTime = mt['datetime']
+            
+            await message.reply(f"<t:{orderTime}> 에 마니또 확정됨!")
 
-        if sel and not pick and not confirmed:
+            guild = bot.get_guild(guild_id)
+            ct = discord.utils.get(guild.categories, id=1151159100256817202)
+            ewol = []
+            for i in [member for member in guild.members if discord.utils.get(guild.roles, id=1108221862485430405) in member.roles]:
+                ewol.append(i.id)
+
+            for chans in ct.channels:
+                user = 0
+                for j in chans.members:
+                    if not j.id in ewol:
+                        user = j.id
+                        break
+                userdata = {}
+                for i in data_users:
+                    if i["from"] == user:
+                        descript = manitoResult([i], except_users)
+
+                        embed = discord.Embed(
+                            title="마니또 결과!",
+                            description=descript,
+                            color=0xF280EB
+                        )
+
+                        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+                        embed.set_thumbnail(url="https://collabo.lol/img/manito.jpg")
+                        embed.add_field(name=chans, value=i)
+                        embed.timestamp = message.created_at
+                        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+
+                        msg_pin = await chans.send(f"<#{message.channel.id}> 채널에서 `{prefix}마니또 추첨 확정` 명령어를 사용하여 마니또의 결과가 나왔습니다!", embed=embed)
+                        await msg_pin.pin()
+
+        if selAll and not pick and not confirmed:
             mt = functions.db.select("SELECT * FROM rutibot_manito WHERE confirmed = 1 ORDER BY datetime DESC LIMIT 1")
             if mt is None:
                 log.error(f"mt | DB에 설정값이 존재 하지 않음!!!")
@@ -413,8 +453,8 @@ async def on_message(message):
 
             await message.reply(f"마지막 추첨은 <t:{orderTime}>에 추첨되었습니다!", embed=embed)
 
-        if not sel and not pick and not confirmed:
-            await message.reply(f"`{prefix}마니또 조회`, `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
+        if not sel and not selAll and not pick and not confirmed:
+            await message.reply(f"`{prefix}마니또 전체조회`(관리자용), `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
             return
 
     # 계란 꺠기 게임

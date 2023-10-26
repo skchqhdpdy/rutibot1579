@@ -1,11 +1,14 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.ext.commands import Bot
 from discord.utils import get
 import json
 from lets_common_log import logUtils as log
 import asyncio
 import random
+from time import time, localtime, strftime
+import datetime
+import pytz
 
 import functions
 
@@ -13,7 +16,12 @@ config = functions.db.select("SELECT * FROM rutibot_setting")
 
 prefix = config["prefix"]
 token = config["token"]
+guild_id = config["guild_id"]
 discord_log_channel = config["discord_log_channel"]
+welcome_channel = config["welcome_channel"]
+welcome_role_id = config["welcome_role_id"]
+#Twitch_token = config["Twitch_token"]
+secretcode_status = True if config["secretcode_status"] == 1 else False
 
 intents = discord.Intents.default()
 intents.typing = False
@@ -21,33 +29,32 @@ intents.presences = False
 intents.messages = True
 intents.members = True
 
-# 봇의 명령어 접두사(prefix)를 정의합니다.
-bot = commands.Bot(command_prefix=prefix, intents=intents)
+bot = discord.Client(intents=intents)
 
 # 봇이 준비되었을 때 실행되는 이벤트 핸들러
 @bot.event
 async def on_ready():
     log.info('루티봇#1579 온라인!')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{prefix}명령어'))
-    
+
 @bot.event
-async def guildMemberAdd(member):
-    channel = bot.get_channel(1149986137377620029)
+async def on_member_join(member):
+    channel = bot.get_channel(welcome_channel)
     if channel is None:
         return
 
     embed = discord.Embed(
         title=f'안녕하세요, {member.name} 님! 서버에 가입하신 것을 환영합니다!',
-        color=0xF280EB,
-        timestamp=member.joined_at
+        color=0xF280EB
     )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
+    embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
     embed.set_thumbnail(url=member.avatar_url)
+    embed.timestamp = datetime.datetime.now(pytz.utc)
     embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
     await channel.send(f'<@{member.id}>', embed=embed)
 
-    role_id_to_add = 1158693253999243325
+    role_id_to_add = welcome_role_id
     role_to_add = get(member.guild.roles, id=role_id_to_add)
     if role_to_add is not None:
         try:
@@ -59,28 +66,23 @@ async def guildMemberAdd(member):
         log.error(f'역할을 찾을 수 없음: {role_id_to_add}')
 
 @bot.event
-async def guildMemberRemove(member):
-    channel = bot.get_channel(1149986137377620029)
+async def on_member_remove(member):
+    channel = bot.get_channel(welcome_channel)
     if channel is None:
         return
 
     embed = discord.Embed(
         title=f'안녕히 가세요, {member.name} 님! 서버에서 나가셨습니다.',
-        color=0xFF5733,
-        timestamp=member.joined_at
+        color=0xFF5733
     )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
+    embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
     embed.set_thumbnail(url=member.avatar_url)
+    embed.timestamp = datetime.datetime.now(pytz.utc)
     embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
     await channel.send(f'<@{member.id}>', embed=embed)
 
 #zira봇 역할
-""" CHANNEL_ID = 1107570796555149353  # 이벤트를 감지할 채널 ID
-MESSAGE_ID = 1145201143023157298  # 이벤트를 감지할 메시지 ID
-EMOJI_NAME = "minecraft"  # 반응에 사용할 이모지 이름
-ROLE_ID = 1145215725645074442  # 부여할 역할 ID """
-
 zira = functions.db.select("SELECT * FROM rutibot_zira WHERE type = 'minecraft'")
 CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
 MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
@@ -94,14 +96,22 @@ async def on_raw_reaction_add(payload):
         return
 
     # 반응한 메시지가 지정한 메시지인지 확인합니다.
-    if payload.message_id == MESSAGE_ID and str(payload.emoji) == EMOJI_NAME:
+    if payload.message_id == MESSAGE_ID and payload.emoji.name == EMOJI_NAME:
         member = bot.get_guild(payload.guild_id).get_member(payload.user_id)
         role = bot.get_guild(payload.guild_id).get_role(ROLE_ID)
         if member and role:
             await member.add_roles(role)
-            msg = f"[{member.name}]에게 [{role.name}] 역할을 추가했습니다."
-            log.info(msg)
-            functions.send_log_discord(bot, discord_log_channel, msg)
+
+            embed = discord.Embed(
+                title=f"[{member.name}]에게 [{role.name}] 역할을 추가했습니다.",
+                description=f"<@{member.id}>에게 <@&{role.id}> 역할을 추가했습니다.",
+                color=0xFF5733
+            )
+            embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+            embed.set_thumbnail(url=member.avatar_url)
+            embed.timestamp = datetime.datetime.now(pytz.utc)
+            embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+            await functions.send_log_discord(bot, discord_log_channel, embed, isEmbed=True)
 
 @bot.event
 async def on_raw_reaction_remove(payload):
@@ -110,373 +120,379 @@ async def on_raw_reaction_remove(payload):
         return
 
     # 반응한 메시지가 지정한 메시지인지 확인합니다.
-    if payload.message_id == MESSAGE_ID and str(payload.emoji) == EMOJI_NAME:
+    if payload.message_id == MESSAGE_ID and payload.emoji.name == EMOJI_NAME:
         member = bot.get_guild(payload.guild_id).get_member(payload.user_id)
         role = bot.get_guild(payload.guild_id).get_role(ROLE_ID)
         if member and role:
             await member.remove_roles(role)
-            msg = f"[{member.name}]에게 [{role.name}] 역할을 제거했습니다."
-            log.info(msg)
-            functions.send_log_discord(bot, discord_log_channel, msg)
+            
+            embed = discord.Embed(
+                title=f"[{member.name}]에게 [{role.name}] 역할을 제거했습니다.",
+                description=f"<@{member.id}>에게 <@&{role.id}> 역할을 제거했습니다.",
+                color=0xFF5733
+            )
+            embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+            embed.set_thumbnail(url=member.avatar_url)
+            embed.timestamp = datetime.datetime.now(pytz.utc)
+            embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+            await functions.send_log_discord(bot, discord_log_channel, embed, isEmbed=True)
 
-
-#메인
-#계란 깨기 게임
-""" game_egg_config = functions.getConfig("config.json")
-
-#의미 없을거 같음
-isGameActive_eggGame = game_egg_config["game"]["egg"]["isGameActive_eggGame"]  # 게임 진행 여부
-brokeEggNumber_eggGame = game_egg_config["game"]["egg"]["brokeEggNumber_eggGame"]  # 날 계란 번호들
-players_eggGame = game_egg_config["game"]["egg"]["players_eggGame"]  # 이미 나온 번호(유저) 기록
-channelID_eggGame = game_egg_config["game"]["egg"]["channelID_eggGame"]  # 게임을 시작한 채널의 ID
-timeoutID_eggGame = game_egg_config["game"]["egg"]["timeoutID_eggGame"]  # timeout ID """
-
-@bot.command(aliases=["명령어"])
-async def commands(ctx):
-    embed = discord.Embed(
-        title='명령어',
-        color=0xFF0000
-    )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
-    embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-    embed.add_field(name=f'{prefix}명령어', value='명령어를 보여줍니다.')
-    embed.add_field(name=f'{prefix}봇 초대', value='봇 초대 주소입니다.')
-    embed.add_field(name=f'{prefix}ping', value=f'봇의 서버핑을 보여줍니다. (음악봇 `{prefix}ping`이랑 중복됨)')
-    embed.add_field(name=f'{prefix}투표', value=f'O 또는 X 로 투표를 할 수 있습니다.\n사용법: `{prefix}투표 투표할 내용`')
-    embed.add_field(name=f'{prefix}홈페이지', value='운영중인 홈페이지 주소를 보여줍니다.')
-    embed.add_field(name=f'{prefix}github', value='깃허브 페이지')
-    embed.add_field(name=f'{prefix}clear [지울 만큼의 숫자]', value=f'`{prefix}clear` 명령어를 포함한 개수의 메세지 삭제')
-    embed.add_field(name=f'{prefix}help (!h)', value=f'`{prefix}help` (`{prefix}h`) 음악봇 관련 명령어 입니다.')
-    embed.add_field(name=f'{prefix}마니또 추첨', value='마니또를 추첨하는 명령어 입니다. (합방 시작 전에 관리자들 끼리 합의 하에 추첨을 하고 그걸 고정해서 사용할 예정)')
-    embed.add_field(name=f'{prefix}게임', value=f'`{prefix}게임` 명령어로 어떤 게임들이 있는지 확인하는 명령어 입니다.')
-    embed.set_timestamp(ctx.message.created_at)
-    embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-    await ctx.send(embed=embed)
-
-@bot.command(aliases=["게임"])
-async def games(ctx):
-    embed = discord.Embed(
-        title='게임 명령어',
-        color=0xFF0000
-    )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
-    embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-    embed.add_field(name=f'{prefix}계란깨기시작', value='계란깨기 게임을 시작합니다.')
-    embed.add_field(name=f'{prefix}계란깨기 [숫자]', value=f'예시로 `{prefix}계란깨기 44`를 입력하면 되고 숫자의 범위는 1~100입니다.')
-    embed.add_field(name=f'{prefix}계란깨기중지', value='계란깨기 게임을 중지합니다.')
-    embed.set_timestamp(ctx.message.created_at)
-    embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-    await ctx.send(embed=embed)
-
-
-@bot.command(aliases=["투표"])
-async def vote(ctx, *, vote_content):
-    embed = discord.Embed(
-        title='👇 투표내용  (Voting contents)',
-        description=vote_content,
-        color=0xFF0000
-    )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
-    embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-    
-    message = await ctx.send(embed=embed)
-    await message.add_reaction("⭕")
-    await message.add_reaction("❌")
-
-@bot.command(aliases=["홈페이지"])
-async def homepage(ctx):
-    embed = discord.Embed(
-        title='명령어',
-        color=0xFF0000
-    )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
-    embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-    embed.add_field(name='https://collabo.lol/pokemon', value='마크 1.12.2 포켓몬 서버 홈페이지')
-    embed.add_field(name='https://collabo.lol/pvp', value='마크 1.20.1 PVP, 건축 서버 홈페이지')
-    embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-    
-    await ctx.send(embed=embed)
-
-@bot.command(aliases=["서버주소", "서버 주소", "마크"])
-async def server_address(ctx):
-    await ctx.reply(f'`{prefix}홈페이지` 명령어를 사용해주세요!')
-    await ctx.send(f"{prefix}홈페이지 (봇이 대신 입력해드렸어요!! XD)")
-
-@bot.command(aliases=["깃허브", "깃헙"])
-async def github(ctx):
-    embed = discord.Embed(
-        title='Github links',
-        color=0xFF0000
-    )
-    embed.set_author(name='루티봇#1579', icon_url='https://collabo.lol/img/setAuthor.webp')
-    embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-    embed.add_field(name='https://github.com/skchqhdpdy', value='<@399535550832443392>의 github 페이지')
-    embed.add_field(name='https://github.com/skchqhdpdy/rutibot1579', value='<@1143492519276060752>의 소스코드')
-    embed.add_field(name='https://github.com/skchqhdpdy/2024-Twitch-Streamer-Collabo', value='web 페이지 소스코드?')
-    embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-    
-    await ctx.send(embed=embed)
-
-@bot.command(aliases=["트위치"])
-async def twitch(ctx):
-    await ctx.send('<@399535550832443392> 야 너 기능 만들어!')
-
-@bot.command()
-async def clear(ctx, amount: int):
-    if not ctx.author.guild_permissions.manage_messages:
-        await ctx.send("권한이 없습니다.")
-        return
-
-    if amount <= 0 or amount > 100:
-        await ctx.send("1부터 100까지의 숫자만 입력하세요.")
-        return
-
-    await ctx.channel.purge(limit=amount + 1)
-    message = await ctx.send(f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 3초 후 삭제됩니다.")
-    await asyncio.sleep(3)
-    await message.delete()
-
-# 마니또 추첨
-# 일정-알려주세요 채널에 메세지도 추가로 보내기 기능 추가하기
-# !마니또 추첨 확정
-# @해당스트리머 의 마니또는 @스트리머 입니다
-@bot.command(aliases=["마니또"])
-async def manito(ctx, *args):
-    pick = False
-    confirmed = False
-    try:
-        if args[0] == "추첨":
-            pick = True
-
-        if args[1] == "확정":
-            confirmed = True
-            log.info("마니또 확정! | 기능 만들기")
-        else:
-            log.debug(args)
-
-    except:
-        pass
-
-    if pick:
-        guild_id = 1107568623050047550
-        role_to_find = '스트리머'
-        guild = bot.get_guild(guild_id)
-        role = discord.utils.get(guild.roles, name=role_to_find)
-
-        if not role:
-            print('역할을 찾을 수 없습니다.')
-            return
-
-        # 스트리머 역할을 가진 멤버 목록을 추출합니다.
-        streamer_members = [member for member in guild.members if role in member.roles]
-
-        # 마니또 참가자 목록
-        # 끼음, 복미, 오소희, 솜팡, 남야 님은 반확정이라서 넣어줘용
-
-        # 저랑 쥐님이랑 공허님(hyp로시작하는분)빼고
-        # 레오욘
-        # 아카나, 게임조선, 예외처리해주세요
-        # (쥐 님은 서버 나감)
-
-        participants = []
-        except_user = [
-            657145673296117760, 
-            472607419474640897, 
-            448274272104873984, 
-            1091687087058731048, 
-            608142953759637534, 
-            901685620768915526
-        ]
-
-        for member in streamer_members:
-            # @스트리머 역할중 6명 제외
-            if member.id not in except_user:
-                participants.append(member.id)
-
-        # 총 4명의 유저는 예외로 서로서로 마니또
-        # 제외유저 추가
-        each_manito = random.sample(participants, k=4)
-
-        # 기존 유저에서 제외 유저 제거
-        for manito in each_manito:
-            participants.remove(manito)
-
-        # 참가자를 무작위로 섞기
-        random.shuffle(participants)
-
-        # 마니또 매칭
-        result_member = [(giver, participants[(i + 1) % len(participants)]) for i, giver in enumerate(participants)]
-
-        descript = f"""
-            ----------------------------------------
-            1번째 | <@{each_manito[0]}> --> <@{each_manito[1]}>
-            2번째 | <@{each_manito[1]}> --> <@{each_manito[0]}>
-            3번째 | <@{each_manito[2]}> --> <@{each_manito[3]}>
-            4번째 | <@{each_manito[3]}> --> <@{each_manito[2]}>
-            ----------------------------------------
-        """
-
-        for idx, (giver, receiver) in enumerate(result_member, start=5):
-            descript += f"{idx}번째 | <@{giver}> --> <@{receiver}>\n"
-
-        descript += "----------------------------------------\n예외처리 (참가 안함)\n"
-
-        for user in except_user:
-            descript += f"<@{user}>\n"
-
-        descript += "----------------------------------------"
-
-        embed = discord.Embed(
-            title="마티또 추첨!",
-            description=descript,
-            color=0xF280EB
-        )
-
-        embed.set_author(name="루티봇#1579", icon_url="https://collabo.lol/img/setAuthor.webp")
-        embed.set_thumbnail(url="https://collabo.lol/img/마니또.jpg")
-        embed.set_footer(text="Made By aodd.xyz", icon_url="https://collabo.lol/img/setFooter.webp")
-
-        await ctx.send(embed=embed)
-    
-    if confirmed:
-        msg = "위에서 기능 만들어서 연결하기"
-        log.debug(msg)
-        await ctx.reply(msg)
-
-    if not pick and not confirmed:
-        msg = "마니또 조회 만들기 (DB연결...?)"
-        log.debug(msg)
-        await ctx.reply(msg)
-
-# 계란 꺠기 게임
-# 게임 상태 변수
-isGameActive_eggGame = False
-brokeEggNumber_eggGame = []
-players_eggGame = {}
-channelID_eggGame = ""
-timeoutID_eggGame = None
-# TODO 나중에 기능 만들기
-""" @bot.command(aliases=["계란깨기"])
-async def egg(ctx):
-    pass """
 @bot.event
 async def on_message(message):
-    log.debug("event")
-    global isGameActive_eggGame
-    global brokeEggNumber_eggGame
-    global players_eggGame
-    global channelID_eggGame
-    global timeoutID_eggGame
-
     if message.author == bot.user:
         return
 
-    if message.content.startswith(prefix):
-        if message.content == f'{prefix}계란깨기시작' and not isGameActive_eggGame:
-            isGameActive_eggGame = True
-            channelID_eggGame = message.channel.id
-            timeoutID_eggGame = timerEggGame(message)
+    chatLog = f"Server:{message.guild} | Channel:{message.channel} | User: {message.author} | Message:{message.content}"
+    log.chat(chatLog)
+    # 파일을 추가 모드로 열고 데이터 추가하기
+    with open('chatlog.txt', 'a', encoding="UTF-8") as file:
+        file.write(f'[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] - {chatLog}\n\n')
 
-            await message.channel.send('계란깨기 게임을 시작합니다!')
 
-            for i in range(5):
-                r = random.randint(1, 100)
-                while r in brokeEggNumber_eggGame:
-                    r = random.randint(1, 100)
-                brokeEggNumber_eggGame.append(r)
-                print(f'날 계란 {i + 1}의 번호: {r}')
+    if message.content == f"{prefix}명령어" or message.content == f"{prefix}command" or message.content == f"{prefix}commands":
+        embed = discord.Embed(
+            title='명령어',
+            color=0xFF0000
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.add_field(name=f'{prefix}명령어', value='명령어를 보여줍니다.')
+        embed.add_field(name=f'{prefix}봇 초대', value='봇 초대 주소입니다.')
+        embed.add_field(name=f'{prefix}ping', value=f'봇의 서버핑을 보여줍니다. (음악봇 `{prefix}ping`이랑 중복됨)')
+        embed.add_field(name=f'{prefix}투표', value=f'O 또는 X 로 투표를 할 수 있습니다.\n사용법: `{prefix}투표 투표할 내용`')
+        embed.add_field(name=f'{prefix}홈페이지', value='운영중인 홈페이지 주소를 보여줍니다.')
+        embed.add_field(name=f'{prefix}github', value='깃허브 페이지')
+        embed.add_field(name=f'{prefix}clear [지울 만큼의 숫자]', value=f'`{prefix}clear` 명령어를 포함한 개수의 메세지 삭제')
+        embed.add_field(name=f'{prefix}help (!h)', value=f'`{prefix}help` (`{prefix}h`) 음악봇 관련 명령어 입니다.')
+        embed.add_field(name=f'{prefix}마니또 추첨', value='마니또를 추첨하는 명령어 입니다. (합방 시작 전에 관리자들 끼리 합의 하에 추첨을 하고 그걸 고정해서 사용할 예정)')
+        embed.add_field(name=f'{prefix}게임', value=f'`{prefix}게임` 명령어로 어떤 게임들이 있는지 확인하는 명령어 입니다.')
+        embed.timestamp = message.created_at
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+        await message.channel.send(embed=embed)
 
-        elif message.content == f'{prefix}계란깨기시작' and isGameActive_eggGame:
-            await message.channel.send(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
+    if message.content == f"{prefix}게임":
+        embed = discord.Embed(
+            title='게임 명령어',
+            color=0xFF0000
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.add_field(name=f'{prefix}계란깨기시작', value='계란깨기 게임을 시작합니다.')
+        embed.add_field(name=f'{prefix}계란깨기 [숫자]', value=f'예시로 `{prefix}계란깨기 44`를 입력하면 되고 숫자의 범위는 1~100입니다.')
+        embed.add_field(name=f'{prefix}계란깨기종료', value='계란깨기 게임을 종료합니다.')
+        embed.timestamp = message.created_at
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+        await message.channel.send(embed=embed)
+
+
+    if message.content.startswith(f"{prefix}투표"):
+        try:
+            des = message.content.split(' ')[1]
+        except:
+            return await message.reply("투표할 내용이 감지되지 않습니다!")
+
+        embed = discord.Embed(
+            title='👇 투표내용  (Voting contents)',
+            description=des,
+            color=0xFF0000
+        )
+        embed.set_author(name='루티봇#1579', icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.timestamp = message.created_at
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        elif message.content == f'{prefix}계란깨기중지' and isGameActive_eggGame:
-            msg = f'<@{message.author.id}>님이 게임을 종료하였습니다.'
-            exitEggGame(message, msg)
+        message = await message.channel.send(embed=embed)
+        await message.add_reaction("⭕")
+        await message.add_reaction("❌")
+
+    if message.content.startswith(f"{prefix}홈페이지"):
+        embed = discord.Embed(
+            title='명령어',
+            color=0xFF0000
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.add_field(name='https://collabo.lol/pokemon', value='마크 1.12.2 포켓몬 서버 홈페이지')
+        embed.add_field(name='https://collabo.lol/pvp', value='마크 1.20.1 PVP, 건축 서버 홈페이지')
+        embed.timestamp = message.created_at
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        elif message.content.startswith(f'{prefix}계란깨기'):
-            if not isGameActive_eggGame:
-                await message.reply(f'`{prefix}계란깨기시작` 명령어로 게임을 먼저 시작하세요!')
+        await message.channel.send(embed=embed)
+
+    if message.content == f"{prefix}서버주소" or message.content == f"{prefix}서버 주소" or message.content == f"{prefix}마크":
+        await message.reply(f'`{prefix}홈페이지` 명령어를 사용해주세요!')
+
+    if message.content == f"{prefix}github" or message.content == f"{prefix}깃허브" or message.content == f"{prefix}깃헙":
+        embed = discord.Embed(
+            title='Github links',
+            color=0xFF0000
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.add_field(name='https://github.com/skchqhdpdy', value='<@399535550832443392>의 github 페이지')
+        embed.add_field(name='https://github.com/skchqhdpdy/rutibot1579', value='<@1143492519276060752>의 소스코드')
+        embed.add_field(name='https://github.com/skchqhdpdy/2024-Twitch-Streamer-Collabo', value='web 페이지 소스코드?')
+        embed.timestamp = message.created_at
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+        
+        await message.channel.send(embed=embed)
+
+    if message.content == f"{prefix}트위치":
+        await message.channel.send('<@399535550832443392> 야 너 기능 만들어!')
+
+    if message.content.startswith(f"{prefix}clear"):
+        if not message.author.guild_permissions.manage_messages:
+            return await message.channel.send("권한이 없습니다.")
+
+        try:
+            amount = int(message.content.split(' ')[1])
+        except:
+            amount = 0
+
+        if amount < 1 or amount > 100:
+            await message.channel.send("1부터 100까지의 숫자만 입력하세요.")
+            return
+
+        await message.channel.purge(limit=amount + 1)
+        msg = await message.channel.send(f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 3초 후 삭제됩니다.")
+        await asyncio.sleep(3)
+        await msg.delete()
+
+    # 마니또 추첨
+    # 일정-알려주세요 채널에 메세지도 추가로 보내기 기능 추가하기
+    # !마니또 추첨 확정
+    # @해당스트리머 의 마니또는 @스트리머 입니다
+    if message.content.startswith(f"{prefix}마니또"):
+        if "추첨" in message.content:
+            pick = True
+        else:
+            pick = False
+
+        if "확정" in message.content:
+            if pick:
+                confirmed = True
+                log.info("마니또 확정! | 기능 만들기")
             else:
+                await message.reply(f"`{prefix}마니또`, `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
+                return
+        else:
+            confirmed = False
+
+        if pick:
+            role_to_find = '스트리머'
+            guild = bot.get_guild(guild_id)
+            role = discord.utils.get(guild.roles, name=role_to_find)
+
+            if not role:
+                print('역할을 찾을 수 없습니다.')
+                return
+
+            # 스트리머 역할을 가진 멤버 목록을 추출합니다.
+            streamer_members = [member for member in guild.members if role in member.roles]
+
+            # 마니또 참가자 목록
+            # 끼음, 복미, 오소희, 솜팡, 남야 님은 반확정이라서 넣어줘용
+
+            # 저랑 쥐님이랑 공허님(hyp로시작하는분)빼고
+            # 레오욘
+            # 아카나, 게임조선, 예외처리해주세요
+            # (쥐 님은 서버 나감)
+
+            participants = []
+            except_user = [
+                657145673296117760, 
+                472607419474640897, 
+                448274272104873984, 
+                1091687087058731048, 
+                608142953759637534, 
+                901685620768915526
+            ]
+
+            for member in streamer_members:
+                # @스트리머 역할중 6명 제외
+                if member.id not in except_user:
+                    participants.append(member.id)
+
+            # 총 4명의 유저는 예외로 서로서로 마니또
+            # 제외유저 추가
+            each_manito = random.sample(participants, k=4)
+
+            # 기존 유저에서 제외 유저 제거
+            for manito in each_manito:
+                participants.remove(manito)
+
+            # 참가자를 무작위로 섞기
+            random.shuffle(participants)
+            log.info(f"셔플 상태 리스트 | {participants}")
+            # 마니또 매칭
+            result_member = [(giver, participants[(i + 1) % len(participants)]) for i, giver in enumerate(participants)]
+
+            descript = f"""
+                ----------------------------------------
+                1번째 | <@{each_manito[0]}> --> <@{each_manito[1]}>
+                2번째 | <@{each_manito[1]}> --> <@{each_manito[0]}>
+                3번째 | <@{each_manito[2]}> --> <@{each_manito[3]}>
+                4번째 | <@{each_manito[3]}> --> <@{each_manito[2]}>
+                ----------------------------------------
+            """
+
+            for idx, (giver, receiver) in enumerate(result_member, start=5):
+                descript += f"{idx}번째 | <@{giver}> --> <@{receiver}>\n"
+
+            descript += "----------------------------------------\n예외처리 (참가 안함)\n"
+
+            for user in except_user:
+                descript += f"<@{user}>\n"
+
+            descript += "----------------------------------------"
+
+            embed = discord.Embed(
+                title="마티또 추첨!",
+                description=descript,
+                color=0xF280EB
+            )
+
+            embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+            embed.set_thumbnail(url="https://collabo.lol/img/manito.jpg")
+            embed.timestamp = message.created_at
+            embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+
+            await message.channel.send(embed=embed)
+            log.debug(f"each_manito = {each_manito}")
+            log.warning(f"result_member = {result_member}")
+            #functions.db.insert(f"INSERT INTO rutibot_manito (from_id, to_id) VALUE (fromID, toID)")
+        
+        if confirmed:
+            msg = "위에서 기능 만들어서 연결하기"
+            log.debug(msg)
+            await message.reply(msg)
+
+        if not pick and not confirmed:
+            msg = "마니또 조회 만들기 (DB연결...?)"
+            log.debug(msg)
+            await message.reply(msg)
+
+    # TODO 나중에 기능 만들기
+    """ @bot.command(aliases=["계란깨기"])
+    async def egg(ctx):
+        pass """
+    
+    # 계란 꺠기 게임
+    # 게임 상태 변수
+    game_egg = functions.db.select("SELECT * from rutibot_game_egg")
+    timer_sec = game_egg["timer_sec"]
+    eggCount = game_egg["eggCount"]
+    eggCountMax = game_egg["eggCountMax"]
+    isGameActive_eggGame = True if game_egg["isGameActive_eggGame"] == 1 else False #False
+    brokeEggNumber_eggGame = json.loads(game_egg["brokeEggNumber_eggGame"]) #[]
+    players_eggGame = json.loads(game_egg["players_eggGame"]) #{}
+    channelID_eggGame = game_egg["channelID_eggGame"] #None
+    start_time = game_egg["start_time"] #None
+
+    def timerEggGame(message):
+        async def game_timeout():
+            msg = '5분간 이용하지 않아 계란깨기 게임이 중지되었습니다.'
+            exitEggGame(message, msg)
+
+        return bot.loop.call_later(300, game_timeout)
+
+    async def exitEggGame(message, msg):
+        functions.db.update("""
+            UPDATE rutibot_game_egg
+            SET
+                isGameActive_eggGame = 0,
+                brokeEggNumber_eggGame = '[]',
+                players_eggGame = '{}',
+                channelID_eggGame = 'NULL',
+                start_time = 'NULL'
+        """)
+        await message.channel.send(msg)
+        await message.channel.send('게임 오버!\n--------------------------------------')
+
+    if message.content == f'{prefix}계란깨기시작' and not isGameActive_eggGame:
+
+        functions.db.update(f"""
+            UPDATE rutibot_game_egg
+            SET
+                isGameActive_eggGame = 1,
+                channelID_eggGame = {message.channel.id},
+                start_time = '{time()}'
+        """)
+
+        await message.channel.send('계란깨기 게임을 시작합니다!')
+
+        # 1부터 100까지의 숫자 중에서 5개를 선택
+        brokeEggNumber_eggGame = random.sample(range(1, eggCountMax + 1), eggCount)
+        functions.db.update(f"UPDATE rutibot_game_egg SET brokeEggNumber_eggGame = '{str(brokeEggNumber_eggGame)}'")
+
+        print(f"날 계란목록 : {brokeEggNumber_eggGame}")
+
+    elif message.content == f'{prefix}계란깨기시작' and isGameActive_eggGame:
+        await message.channel.send(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
+    
+    elif (message.content == f'{prefix}계란깨기종료' or message.content == f'{prefix}계란깨기중지') and isGameActive_eggGame:
+        msg = f'<@{message.author.id}>님이 게임을 종료하였습니다.'
+        await exitEggGame(message, msg)
+    
+    elif message.content.startswith(f'{prefix}계란깨기'):
+        if not isGameActive_eggGame:
+            await message.reply(f'`{prefix}계란깨기시작` 명령어로 게임을 먼저 시작하세요!')
+        else:
+            try:
                 userNumber = int(message.content.split(' ')[1])
+            except:
+                userNumber = 0
 
-                if userNumber < 1 or userNumber > 100:
-                    await message.reply('1에서 100 사이의 숫자를 입력하세요!')
-                elif userNumber in players_eggGame:
-                    await message.reply(f'{userNumber}는 <@{players_eggGame[userNumber]}>님이 입력했던 숫자입니다. 다른 숫자를 입력하세요!')
-                elif userNumber in brokeEggNumber_eggGame:
-                    msg = f'<@{message.author.id}>님이 날 계란 {brokeEggNumber_eggGame} 중 ({userNumber}번 계란)을 깼습니다.'
-                    exitEggGame(message, msg)
-                else:
-                    players_eggGame[userNumber] = message.author.id
-                    remainingEggs = 100 - len(players_eggGame)
-                    await message.reply(f'{userNumber}는 삶은 계란입니다. 남은 계란의 수는 {remainingEggs}개 입니다.')
+            if userNumber < 1 or userNumber > eggCountMax:
+                await message.reply(f'1에서 {eggCountMax} 사이의 숫자를 입력하세요!')
+            elif str(userNumber) in players_eggGame:
+                await message.reply(f'{userNumber}는 <@{players_eggGame[str(userNumber)]}>님이 입력했던 숫자입니다. 다른 숫자를 입력하세요!')
+            elif userNumber in brokeEggNumber_eggGame:
+                msg = f'<@{message.author.id}>님이 날 계란 {brokeEggNumber_eggGame} 중 ({userNumber}번 계란)을 깼습니다.'
+                await exitEggGame(message, msg)
+            else:
+                players_eggGame[str(userNumber)] = message.author.id
+                log.debug(f"players_eggGame = {players_eggGame}")
+                log.debug(f"players_eggGame[str(userNumber)] = {players_eggGame[str(userNumber)]}")
+                functions.db.update(f"UPDATE rutibot_game_egg SET players_eggGame = '{json.dumps(players_eggGame)}'")
+                remainingEggs = eggCountMax - len(players_eggGame)
+                await message.reply(f'{userNumber}는 삶은 계란입니다. 남은 계란의 수는 {remainingEggs}개 입니다.')
 
-        elif message.channel.id == channelID_eggGame and message.content.startswith(prefix):
-            if timeoutID_eggGame is not None:
-                timeoutID_eggGame.cancel()
-            timeoutID_eggGame = timerEggGame(message)
+    #elif message.channel.id == channelID_eggGame and message.content.startswith(prefix):
+    else:
+        exfired_check = functions.db.select("SELECT timer_sec, isGameActive_eggGame, channelID_eggGame, start_time from rutibot_game_egg")
+        timer_sec = exfired_check["timer_sec"]
+        isGameActive_eggGame = True if exfired_check["isGameActive_eggGame"] == 1 else False
+        channelID_eggGame = exfired_check["channelID_eggGame"]
+        start_time = exfired_check["start_time"]
+        now = round(time())
 
-def timerEggGame(message):
-    async def game_timeout():
-        msg = '5분간 이용하지 않아 계란깨기 게임이 중지되었습니다.'
-        exitEggGame(message, msg)
-
-    return bot.loop.call_later(300, game_timeout)
-
-def exitEggGame(message, msg):
-    global isGameActive_eggGame
-    global brokeEggNumber_eggGame
-    global players_eggGame
-    global channelID_eggGame
-    global timeoutID_eggGame
-
-    if timeoutID_eggGame is not None:
-        timeoutID_eggGame.cancel()
-    print(msg)
-    message.channel.send(msg)
-    message.channel.send('게임 오버!\n--------------------------------------')
-    isGameActive_eggGame = False
-    brokeEggNumber_eggGame = []
-    players_eggGame = {}
-    channelID_eggGame = None
-    timeoutID_eggGame = None
+        if isGameActive_eggGame and (start_time + timer_sec) < now:
+            await bot.get_channel(channelID_eggGame).send(f"{round(timer_sec / 60)}분 제한중, {round((now - start_time) / 60)}분간 이용하지 않아 계란깨기 게임이 중지되었습니다.")
 
 ##////////////////////////////////////////////////////////////이스터 애그/////////////////////////////////////////////////////////////##
 
-# 비밀 메시지 처리
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    
+    # 비밀 메시지 처리
     if message.content == "비밀":
         await message.reply("꺅 비밀 들켜버렸다")
 
-    with open("./secretcode.json", "r", encoding="utf-8") as file:
-        secret_code = json.load(file)
+    secret_code = functions.db.select("SELECT * FROM rutibot_secretcode")
 
-    if message.content in secret_code["SecretCode"] and message.channel.id == 1146725666348339323:
+    if message.content in secret_code["SecretCode"] and message.channel.id == secret_code["message_channel_id"]:
         await message.reply("이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
-
-    await bot.process_commands(message)
 
 ##/////////////////////////////////////////////////////////////따로뺴둠//////////////////////////////////////////////////////////////##
 
 # 봇 초대 명령어
-@bot.command(aliases=["봇", "봇초대"])
-async def invite(ctx, *args):
-    try:
-        if args[0] == "초대":
-            await ctx.reply("https://discord.com/api/oauth2/authorize?client_id=1143492519276060752&permissions=8&scope=bot")
-    except:
-        await ctx.reply("https://discord.com/api/oauth2/authorize?client_id=1143492519276060752&permissions=8&scope=bot")
+    if message.content == f"{prefix}봇" or message.content == f"{prefix}봇 초대" or message.content == f"{prefix}봇초대" or message.content == f"{prefix}invite":
+        await message.reply(f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot")
 
 # Ping 명령어
-@bot.command(aliases=["핑"])
-async def ping(ctx):
-    time_take = round(bot.latency * 1000)  # 서버 핑을 밀리초(ms)로 계산
-    await ctx.reply(f"서버 핑은 **{time_take}ms** 입니다.")
-    log.info(f"서버 핑은 **{time_take}ms** 입니다.")
+    if message.content == f"{prefix}핑" or message.content == f"{prefix}ping":
+        time_take = round(bot.latency * 1000)  # 서버 핑을 밀리초(ms)로 계산
+        msg = f"서버 핑은 **{time_take}ms** 입니다."
+        log.info(msg)
+        await message.reply(msg)
 
 # 봇을 실행합니다.
 bot.run(token)

@@ -13,6 +13,9 @@ import pytz
 import functions
 
 config = functions.db.select("SELECT * FROM rutibot_setting")
+if config is None:
+    log.error(f"config | DB에 설정값이 존재 하지 않음!!!")
+    exit()
 
 prefix = config["prefix"]
 token = config["token"]
@@ -84,10 +87,13 @@ async def on_member_remove(member):
 
 #zira봇 역할
 zira = functions.db.select("SELECT * FROM rutibot_zira WHERE type = 'minecraft'")
-CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
-MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
-EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
-ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
+if zira is None:
+    log.error(f"zira | DB에 설정값이 존재 하지 않음!!!")
+else:
+    CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
+    MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
+    EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
+    ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -262,7 +268,32 @@ async def on_message(message):
     # 일정-알려주세요 채널에 메세지도 추가로 보내기 기능 추가하기
     # !마니또 추첨 확정
     # @해당스트리머 의 마니또는 @스트리머 입니다
+    def manitoResult(member_lists, except_users):
+        descript = ""
+        for i in member_lists:
+            if i["order"] == 1:
+                descript += "----------------------------------------\n"
+                descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"
+            elif i["order"] == 4:
+                descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"
+                descript += "----------------------------------------\n"
+            else:
+                descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"
+
+        descript += "----------------------------------------\n예외처리 (참가 안함)\n"
+
+        for user in except_users:
+            descript += f"<@{user}>\n"
+
+        descript += "----------------------------------------"
+        return descript
+
     if message.content.startswith(f"{prefix}마니또"):
+        if "조회" in message.content:
+            sel = True
+        else:
+            sel = False
+
         if "추첨" in message.content:
             pick = True
         else:
@@ -273,7 +304,7 @@ async def on_message(message):
                 confirmed = True
                 log.info("마니또 확정! | 기능 만들기")
             else:
-                await message.reply(f"`{prefix}마니또`, `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
+                await message.reply(f"`{prefix}마니또 조회`, `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
                 return
         else:
             confirmed = False
@@ -299,7 +330,7 @@ async def on_message(message):
             # (쥐 님은 서버 나감)
 
             participants = []
-            except_user = [
+            except_users = [
                 657145673296117760, 
                 472607419474640897, 
                 448274272104873984, 
@@ -310,7 +341,7 @@ async def on_message(message):
 
             for member in streamer_members:
                 # @스트리머 역할중 6명 제외
-                if member.id not in except_user:
+                if member.id not in except_users:
                     participants.append(member.id)
 
             # 총 4명의 유저는 예외로 서로서로 마니또
@@ -323,28 +354,20 @@ async def on_message(message):
 
             # 참가자를 무작위로 섞기
             random.shuffle(participants)
-            log.info(f"셔플 상태 리스트 | {participants}")
             # 마니또 매칭
-            result_member = [(giver, participants[(i + 1) % len(participants)]) for i, giver in enumerate(participants)]
+            part_member = [(giver, participants[(i + 1) % len(participants)]) for i, giver in enumerate(participants)]
 
-            descript = f"""
-                ----------------------------------------
-                1번째 | <@{each_manito[0]}> --> <@{each_manito[1]}>
-                2번째 | <@{each_manito[1]}> --> <@{each_manito[0]}>
-                3번째 | <@{each_manito[2]}> --> <@{each_manito[3]}>
-                4번째 | <@{each_manito[3]}> --> <@{each_manito[2]}>
-                ----------------------------------------
-            """
+            member_lists = [
+                {"order": 1, "from": each_manito[0], "to": each_manito[1]},
+                {"order": 2, "from": each_manito[1], "to": each_manito[0]},
+                {"order": 3, "from": each_manito[2], "to": each_manito[3]},
+                {"order": 4, "from": each_manito[3], "to": each_manito[2]}
+            ]
 
-            for idx, (giver, receiver) in enumerate(result_member, start=5):
-                descript += f"{idx}번째 | <@{giver}> --> <@{receiver}>\n"
+            for idx, (giver, receiver) in enumerate(part_member, start=5):
+                member_lists.append({"order": idx, "from": giver, "to": receiver})
 
-            descript += "----------------------------------------\n예외처리 (참가 안함)\n"
-
-            for user in except_user:
-                descript += f"<@{user}>\n"
-
-            descript += "----------------------------------------"
+            descript = manitoResult(member_lists, except_users)
 
             embed = discord.Embed(
                 title="마티또 추첨!",
@@ -357,37 +380,57 @@ async def on_message(message):
             embed.timestamp = message.created_at
             embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
-            await message.channel.send(embed=embed)
-            log.debug(f"each_manito = {each_manito}")
-            log.warning(f"result_member = {result_member}")
-            #functions.db.insert(f"INSERT INTO rutibot_manito (from_id, to_id) VALUE (fromID, toID)")
+            await message.reply(embed=embed)
+            functions.db.insert(f"INSERT INTO rutibot_manito (id, data_users, except_users, confirmed, datetime) VALUE ('NULL', '{json.dumps(member_lists)}', '{str(except_users)}', {confirmed}, {time()})")
         
         if confirmed:
-            msg = "위에서 기능 만들어서 연결하기"
+            # TODO
+            msg = "위에서 기능 만들어서 연결하기 (각 채널로 전송)"
             log.debug(msg)
             await message.reply(msg)
 
-        if not pick and not confirmed:
-            msg = "마니또 조회 만들기 (DB연결...?)"
-            log.debug(msg)
-            await message.reply(msg)
+        if sel and not pick and not confirmed:
+            mt = functions.db.select("SELECT * FROM rutibot_manito WHERE confirmed = 1 ORDER BY datetime DESC LIMIT 1")
+            if mt is None:
+                log.error(f"mt | DB에 설정값이 존재 하지 않음!!!")
+                return await message.reply("마니또 추첨 확정 데이터가 없습니다!")
+            data_users = json.loads(mt["data_users"])
+            except_users = json.loads(mt["except_users"])
+            orderTime = mt['datetime']
 
-    # TODO 나중에 기능 만들기
-    """ @bot.command(aliases=["계란깨기"])
-    async def egg(ctx):
-        pass """
-    
+            descript = manitoResult(data_users, except_users)
+            
+            embed = discord.Embed(
+                title=f"마티또 조회! \n\n마지막 추첨 : <t:{orderTime}>",
+                description=descript,
+                color=0xF280EB
+            )
+
+            embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+            embed.set_thumbnail(url="https://collabo.lol/img/manito.jpg")
+            embed.timestamp = message.created_at
+            embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+
+            await message.reply(f"마지막 추첨은 <t:{orderTime}>에 추첨되었습니다!", embed=embed)
+
+        if not sel and not pick and not confirmed:
+            await message.reply(f"`{prefix}마니또 조회`, `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
+            return
+
     # 계란 꺠기 게임
     # 게임 상태 변수
     game_egg = functions.db.select("SELECT * from rutibot_game_egg")
-    timer_sec = game_egg["timer_sec"]
-    eggCount = game_egg["eggCount"]
-    eggCountMax = game_egg["eggCountMax"]
-    isGameActive_eggGame = True if game_egg["isGameActive_eggGame"] == 1 else False #False
-    brokeEggNumber_eggGame = json.loads(game_egg["brokeEggNumber_eggGame"]) #[]
-    players_eggGame = json.loads(game_egg["players_eggGame"]) #{}
-    channelID_eggGame = game_egg["channelID_eggGame"] #None
-    start_time = game_egg["start_time"] #None
+    if game_egg is None:
+        log.error(f"game_egg | DB에 설정값이 존재 하지 않음!!!")
+    else:
+        timer_sec = game_egg["timer_sec"]
+        eggCount = game_egg["eggCount"]
+        eggCountMax = game_egg["eggCountMax"]
+        isGameActive_eggGame = True if game_egg["isGameActive_eggGame"] == 1 else False #False
+        brokeEggNumber_eggGame = json.loads(game_egg["brokeEggNumber_eggGame"]) #[]
+        players_eggGame = json.loads(game_egg["players_eggGame"]) #{}
+        channelID_eggGame = game_egg["channelID_eggGame"] #None
+        start_time = game_egg["start_time"] #None
 
     def timerEggGame(message):
         async def game_timeout():
@@ -461,11 +504,14 @@ async def on_message(message):
     #elif message.channel.id == channelID_eggGame and message.content.startswith(prefix):
     else:
         exfired_check = functions.db.select("SELECT timer_sec, isGameActive_eggGame, channelID_eggGame, start_time from rutibot_game_egg")
-        timer_sec = exfired_check["timer_sec"]
-        isGameActive_eggGame = True if exfired_check["isGameActive_eggGame"] == 1 else False
-        channelID_eggGame = exfired_check["channelID_eggGame"]
-        start_time = exfired_check["start_time"]
-        now = round(time())
+        if exfired_check is None:
+            log.error(f"exfired_check | DB에 설정값이 존재 하지 않음!!!")
+        else:
+            timer_sec = exfired_check["timer_sec"]
+            isGameActive_eggGame = True if exfired_check["isGameActive_eggGame"] == 1 else False
+            channelID_eggGame = exfired_check["channelID_eggGame"]
+            start_time = exfired_check["start_time"]
+            now = round(time())
 
         if isGameActive_eggGame and (start_time + timer_sec) < now:
             await bot.get_channel(channelID_eggGame).send(f"{round(timer_sec / 60)}분 제한중, {round((now - start_time) / 60)}분간 이용하지 않아 계란깨기 게임이 중지되었습니다.")
@@ -477,6 +523,8 @@ async def on_message(message):
         await message.reply("꺅 비밀 들켜버렸다")
 
     secret_code = functions.db.select("SELECT * FROM rutibot_secretcode")
+    if secret_code is None:
+        log.error(f"secret_code | DB에 설정값이 존재 하지 않음!!!")
 
     if message.content in secret_code["SecretCode"] and message.channel.id == secret_code["message_channel_id"]:
         await message.reply("이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")

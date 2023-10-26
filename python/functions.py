@@ -69,11 +69,14 @@ class db:
         pydb.close()
 
 # 디코 채널 로그
-def send_log_discord(bot, channel_id, content):
+async def send_log_discord(bot, channel_id, content, isEmbed=False):
     try:
         target_channel = bot.get_channel(channel_id)
         if target_channel:
-            target_channel.send(content)
+            if isEmbed:
+                await target_channel.send(embed=content)
+            else:
+                await target_channel.send(content)
         else:
             log.error(f"<#{channel_id}> 해당 채널을 찾을 수 없음")
     except Exception as error:

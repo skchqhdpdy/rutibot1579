@@ -333,7 +333,6 @@ async def on_message(message):
             # 레오욘
             # 아카나, 게임조선, 예외처리해주세요
             # (쥐 님은 서버 나감)
-
             # 유채란, 하니
 
             participants = []

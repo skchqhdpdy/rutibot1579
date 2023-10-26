@@ -1,8 +1,9 @@
 {
-    "prefix": "!",
-    "token": "YOUR_DISCORD_BOT_TOKEN",
-
-    "serverID": "1107568623050047550",
-    "roleID": "1107570234363215923",
-    "interval": "1000"
+    "db": {
+        "host": "localhost",
+        "port": 3306,
+        "username": "",
+        "password": "",
+        "database": ""
+    }
 }

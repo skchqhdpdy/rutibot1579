@@ -33,7 +33,9 @@ class db:
         result = cursor.fetchall()
         pydb.close()
 
-        if len(result) == 1:
+        if not result:
+            return None
+        elif len(result) == 1:
             data = {}
             for c, r in zip(columns, result[0]):
                 data[c] = r

@@ -35,10 +35,22 @@ intents.members = True
 
 bot = discord.Client(intents=intents)
 
+# 주기적으로 0시를 체크하는 태스크
+@tasks.loop(minutes=1)
+async def check_midnight():
+    now = datetime.datetime.now()
+    if now.hour == 0 and now.minute == 0:
+        # 0시에 실행할 작업을 여기에 추가
+        r = await functions.yurinyan(discord, bot, message="").midnightPoint()
+        if r is None:
+            await functions.send_log_discord(bot, 1161980782693331016, "`yurinyan_` 테이블에 유저 정보가 없음! (포인트)")
+        await functions.send_log_discord(bot, discord_log_channel, f"<@399535550832443392> 얌마! 0시 자정이다!!!")
+
 # 봇이 준비되었을 때 실행되는 이벤트 핸들러
 @bot.event
 async def on_ready():
     log.info('루티봇#1579 온라인!')
+    check_midnight.start()
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{prefix}명령어'))
 
 @bot.event
@@ -118,7 +130,7 @@ async def on_raw_reaction_add(payload):
             embed.set_thumbnail(url=member.avatar_url)
             embed.timestamp = datetime.datetime.now(pytz.utc)
             embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-            await functions.send_log_discord(bot, discord_log_channel, embed, isEmbed=True)
+            await functions.send_log_discord(bot, discord_log_channel, ["", embed], isEmbed=True)
 
 @bot.event
 async def on_raw_reaction_remove(payload):
@@ -142,7 +154,7 @@ async def on_raw_reaction_remove(payload):
             embed.set_thumbnail(url=member.avatar_url)
             embed.timestamp = datetime.datetime.now(pytz.utc)
             embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-            await functions.send_log_discord(bot, discord_log_channel, embed, isEmbed=True)
+            await functions.send_log_discord(bot, discord_log_channel, ["", embed], isEmbed=True)
 
 @bot.event
 async def on_message(message):
@@ -315,6 +327,9 @@ async def on_message(message):
         else:
             confirmed = False
 
+        if confirmed and not message.author.guild_permissions.manage_messages:
+            return await message.reply("마니또 확정 권한이 없습니다.")
+
         if pick:
             role_to_find = '스트리머'
             guild = bot.get_guild(guild_id)
@@ -390,6 +405,7 @@ async def on_message(message):
             embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
             await message.reply(embed=embed)
+
             functions.db.insert(f"INSERT INTO rutibot_manito (id, data_users, except_users, confirmed, datetime) VALUE ('NULL', '{json.dumps(member_lists)}', '{str(except_users)}', {confirmed}, {time()})")
         
         if confirmed:
@@ -591,6 +607,15 @@ async def on_message(message):
         msg = f"서버 핑은 **{time_take}ms** 입니다."
         log.info(msg)
         await message.reply(msg)
+
+
+##/////////////////////////////////////////////////////////////유리냥이//////////////////////////////////////////////////////////////##
+
+    if message.content.startswith(f"{prefix}유리냥이"):
+        if message.author.id == 657145673296117760 or message.author.id == 399535550832443392:
+            await functions.yurinyan(discord, bot, message).commands()
+        else:
+            await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")
 
 # 봇을 실행합니다.
 bot.run(token)

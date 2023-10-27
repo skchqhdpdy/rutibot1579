@@ -132,8 +132,10 @@ class yurinyan:
                 db.update(f"UPDATE yurinyan_ SET discord_point = {i['discord_point'] + 1}, last_update = '{time.time()}' WHERE discord_userid = {i['discord_userid']}")
         elif type(data) is dict:
             db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + 1}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
-        embed = self.pointSelAll()
-        return await self.message.reply(embed=embed)
+        embed = await self.pointSelAll()
+
+        channel = self.bot.get_channel(1162290295380131871)
+        return await channel.send(embed=embed)
 
     async def commands(self):
         if self.message.content == f"{self.prefix}유리냥이":
@@ -154,7 +156,7 @@ class yurinyan:
 
         if self.message.content.startswith(f"{self.prefix}유리냥이 포인트"):           
             if "전체조회" in self.message.content:
-                embed = self.pointSelAll()
+                embed = await self.pointSelAll()
                 return await self.message.reply(embed=embed)
             elif "조회" in self.message.content:
                 try:

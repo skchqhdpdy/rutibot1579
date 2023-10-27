@@ -1,5 +1,6 @@
 import json
 import pymysql
+import time
 
 from lets_common_log import logUtils as log
 
@@ -76,7 +77,7 @@ async def send_log_discord(bot, channel_id, content, isEmbed=False):
         target_channel = bot.get_channel(channel_id)
         if target_channel:
             if isEmbed:
-                await target_channel.send(embed=content)
+                await target_channel.send(content[0], embed=content[1])
             else:
                 await target_channel.send(content)
         else:
@@ -85,3 +86,113 @@ async def send_log_discord(bot, channel_id, content, isEmbed=False):
         log.error(f'send_log_discord() 함수 예외처리 됨 | error = {error}')
 
 # 계란 꺠기 게임
+
+# 유리냥이
+class yurinyan:
+    def __init__(self, discord, bot, message):
+        config = db.select("SELECT prefix, discord_log_channel FROM rutibot_setting")
+        if config is None:
+            log.error(f"config | DB에 설정값이 존재 하지 않음!!!")
+            exit()
+        self.prefix = config["prefix"]
+        self.discord_log_channel = config["discord_log_channel"]
+        
+        self.discord = discord
+        self.bot = bot
+        self.message = message
+
+    async def pointSelAll(self):
+        descript = ""
+        data = db.select("SELECT * FROM yurinyan_")
+        if data is None:
+            return await self.message.reply(f"유저들의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
+        elif type(data) is list:
+            for i in data:
+                descript += f"<@{i['discord_userid']}> == `{i['discord_point']}` Point \n\n"
+        elif type(data) is dict:
+            descript += f"<@{data['discord_userid']}> == `{data['discord_point']}` Point"
+
+        embed = self.discord.Embed(
+            title=f'{self.prefix}유리냥이 포인트 전체조회',
+            description=descript,
+            color=0xFF0000
+        )
+        embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.timestamp = self.message.created_at
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+        return embed
+
+    async def midnightPoint(self):
+        data = db.select("SELECT * FROM yurinyan_")
+        if data is None:
+            return None
+        elif type(data) is list:
+            for i in data:
+                db.update(f"UPDATE yurinyan_ SET discord_point = {i['discord_point'] + 1}, last_update = '{time.time()}' WHERE discord_userid = {i['discord_userid']}")
+        elif type(data) is dict:
+            db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + 1}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
+        embed = self.pointSelAll()
+        return await self.message.reply(embed=embed)
+
+    async def commands(self):
+        if self.message.content == f"{self.prefix}유리냥이":
+            embed = self.discord.Embed(
+                title=f'{self.prefix}유리냥이 관련 명령어',
+                color=0xFF0000
+            )
+            embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
+            embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+            embed.add_field(name=f'{self.prefix}유리냥이', value=f'{self.prefix}유리냥이 관련 명령어를 보여줍니다.')
+            embed.add_field(name=f'{self.prefix}유리냥이 포인트 조회', value=f'특정 유저의 포인트를 조회합니다. (`{self.prefix}유리냥이 포인트 조회 <유저아이디> <포인트>`)')
+            embed.add_field(name=f'{self.prefix}유리냥이 포인트 전체조회', value=f'모든 유저의 포인트를 조회합니다. (`{self.prefix}유리냥이 포인트 전체조회`)')
+            embed.add_field(name=f'{self.prefix}유리냥이 포인트 유저추가', value=f'포인트 관리를 할 수 있게 DB에 유저를 추가합니다. (`{self.prefix}유리냥이 포인트 유저추가 <유저아이디>`)')
+            embed.add_field(name=f'{self.prefix}유리냥이 포인트 지급', value=f'특정 유저에게 포인트를 지급합니다. (`{self.prefix}유리냥이 포인트 지급 <유저아이디> <포인트>`)')
+            embed.timestamp = self.message.created_at
+            embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+            return await self.message.reply(embed=embed)
+
+        if self.message.content.startswith(f"{self.prefix}유리냥이 포인트"):           
+            if "전체조회" in self.message.content:
+                embed = self.pointSelAll()
+                return await self.message.reply(embed=embed)
+            elif "조회" in self.message.content:
+                try:
+                    userID = self.message.content.split(' ')[3]
+                except:
+                    return await self.message.reply("유저 아이디가 감지되지 않습니다!")
+                
+                data = db.select(f"SELECT discord_point FROM yurinyan_ WHERE discord_userid = {userID}")
+                if data is None:
+                    return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
+                return await self.message.reply(f"<@{userID}>의 포인트는 {data['discord_point']}포인트 입니다!")
+
+            elif "유저추가" in self.message.content:
+                try:
+                    userID = self.message.content.split(' ')[3]
+                except:
+                    return await self.message.reply("유저 아이디가 감지되지 않습니다!")
+                
+                data = db.select(f"SELECT discord_userid FROM yurinyan_ WHERE discord_userid = {userID}")
+                if data is None:
+                    db.insert(f"INSERT INTO yurinyan_ (discord_userid, discord_username, discord_point, last_update) VALUE ({userID}, '{self.message.author.name}', 'NULL', {time.time()})")
+                    return await self.message.reply(f"<@{userID}> DB에 추가 완료!")
+                else:
+                    return await self.message.reply(f"해당 유저(<@{userID}>)는 이미 DB에 존재합니다!")
+            elif "지급" in self.message.content:
+                try:
+                    userID = self.message.content.split(' ')[3]
+                except:
+                    return await self.message.reply("유저 아이디가 감지되지 않습니다!")
+                try:
+                    addPoint = int(self.message.content.split(' ')[4])
+                except:
+                    return await self.message.reply("지급할 포인트가 감지되지 않습니다!")
+                
+                data = db.select(f"SELECT * FROM yurinyan_ WHERE discord_userid = {userID}")
+                if data is None:
+                    return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!") 
+                db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
+                return await self.message.reply(f"<@{userID}>에게 {addPoint}포인트 추가해서, 총 {data['discord_point'] + addPoint}포인트 입니다!")
+            else:
+                return await self.message.reply(f"`{self.prefix}유리냥이 포인트 전체조회`, `{self.prefix}유리냥이 포인트 조회`, `{self.prefix}유리냥이 포인트 유저추가` `{self.prefix}유리냥이 포인트 지급` \n\n형식으로 입력해주세요!")

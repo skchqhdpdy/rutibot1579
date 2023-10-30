@@ -282,9 +282,15 @@ async def on_message(message):
     # 일정-알려주세요 채널에 메세지도 추가로 보내기 기능 추가하기
     # !마니또 추첨 확정
     # @해당스트리머 의 마니또는 @스트리머 입니다
-    def manitoResult(member_lists, except_users):
+    async def manitoResult(member_lists, except_users):
         descript = ""
         for i in member_lists:
+            try:
+                fromInfo = await bot.fetch_user(i["from"])
+                toInfo = await bot.fetch_user(i["to"])
+            except:
+                log.error("member_lists | 유저 캐시 실패")
+
             if i["order"] == 1:
                 descript += "----------------------------------------\n"
                 descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"
@@ -297,6 +303,12 @@ async def on_message(message):
         descript += "----------------------------------------\n예외처리 (참가 안함)\n"
 
         for user in except_users:
+            try:
+                fromInfo = await bot.fetch_user(i["from"])
+                toInfo = await bot.fetch_user(i["to"])
+            except:
+                log.error("except_users | 유저 캐시 실패")
+
             descript += f"<@{user}>\n"
 
         descript += "----------------------------------------"
@@ -391,7 +403,7 @@ async def on_message(message):
             for idx, (giver, receiver) in enumerate(part_member, start=5):
                 member_lists.append({"order": idx, "from": giver, "to": receiver})
 
-            descript = manitoResult(member_lists, except_users)
+            descript = await manitoResult(member_lists, except_users)
 
             embed = discord.Embed(
                 title="마티또 추첨!",
@@ -435,7 +447,7 @@ async def on_message(message):
                 userdata = {}
                 for i in data_users:
                     if i["from"] == user:
-                        descript = manitoResult([i], except_users)
+                        descript = await manitoResult([i], except_users)
 
                         embed = discord.Embed(
                             title="마니또 결과!",
@@ -464,7 +476,7 @@ async def on_message(message):
             except_users = json.loads(mt["except_users"])
             orderTime = mt['datetime']
 
-            descript = manitoResult(data_users, except_users)
+            descript = await manitoResult(data_users, except_users)
             
             embed = discord.Embed(
                 title=f"마티또 조회! \n\n마지막 추첨 : <t:{orderTime}>",
@@ -612,7 +624,7 @@ async def on_message(message):
 ##/////////////////////////////////////////////////////////////유리냥이//////////////////////////////////////////////////////////////##
 
     if message.content.startswith(f"{prefix}유리냥이"):
-        if message.author.id == 657145673296117760:
+        if message.author.id == 657145673296117760 or True:
             await functions.yurinyan(discord, bot, message).commands()
         else:
             await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")

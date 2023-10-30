@@ -1,6 +1,8 @@
 import json
 import pymysql
 import time
+import datetime
+import pytz
 
 from lets_common_log import logUtils as log
 
@@ -90,11 +92,12 @@ async def send_log_discord(bot, channel_id, content, isEmbed=False):
 # 유리냥이
 class yurinyan:
     def __init__(self, discord, bot, message):
-        config = db.select("SELECT prefix, discord_log_channel FROM rutibot_setting")
+        config = db.select("SELECT prefix, guild_id, discord_log_channel FROM rutibot_setting")
         if config is None:
             log.error(f"config | DB에 설정값이 존재 하지 않음!!!")
             exit()
         self.prefix = config["prefix"]
+        self.guild_id = config["guild_id"]
         self.discord_log_channel = config["discord_log_channel"]
         
         self.discord = discord
@@ -108,9 +111,9 @@ class yurinyan:
             return await self.message.reply(f"유저들의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
         elif type(data) is list:
             for i in data:
-                descript += f"<@{i['discord_userid']}> == `{i['discord_point']}` Point \n\n"
+                descript += f"<t:{i['last_update']}> 에 업데이트 됨. \n<@{i['discord_userid']}> == `{i['discord_point']}` Point \n\n"
         elif type(data) is dict:
-            descript += f"<@{data['discord_userid']}> == `{data['discord_point']}` Point"
+            descript += f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{data['discord_userid']}> == `{data['discord_point']}` Point"
 
         embed = self.discord.Embed(
             title=f'{self.prefix}유리냥이 포인트 전체조회',
@@ -119,7 +122,7 @@ class yurinyan:
         )
         embed.set_author(name=self.bot.user, icon_url=self.bot.user.avatar_url)
         embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-        embed.timestamp = self.message.created_at
+        embed.timestamp = datetime.datetime.now(pytz.utc)
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         return embed
 
@@ -160,24 +163,25 @@ class yurinyan:
                 return await self.message.reply(embed=embed)
             elif "조회" in self.message.content:
                 try:
-                    userID = self.message.content.split(' ')[3]
+                    userID = int(self.message.content.split(' ')[3])
                 except:
                     return await self.message.reply("유저 아이디가 감지되지 않습니다!")
                 
-                data = db.select(f"SELECT discord_point FROM yurinyan_ WHERE discord_userid = {userID}")
+                data = db.select(f"SELECT discord_point, last_update FROM yurinyan_ WHERE discord_userid = {userID}")
                 if data is None:
                     return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
-                return await self.message.reply(f"<@{userID}>의 포인트는 {data['discord_point']}포인트 입니다!")
+                return await self.message.reply(f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{userID}>의 포인트는 {data['discord_point']}포인트 입니다!")
 
             elif "유저추가" in self.message.content:
                 try:
-                    userID = self.message.content.split(' ')[3]
+                    userID = int(self.message.content.split(' ')[3])
                 except:
                     return await self.message.reply("유저 아이디가 감지되지 않습니다!")
                 
                 data = db.select(f"SELECT discord_userid FROM yurinyan_ WHERE discord_userid = {userID}")
                 if data is None:
-                    db.insert(f"INSERT INTO yurinyan_ (discord_userid, discord_username, discord_point, last_update) VALUE ({userID}, '{self.message.author.name}', 'NULL', {time.time()})")
+                    member = self.bot.get_user(userID)
+                    db.insert(f"INSERT INTO yurinyan_ (discord_userid, discord_username, discord_point, last_update) VALUE ({userID}, '{member.name}', 'NULL', {time.time()})")
                     return await self.message.reply(f"<@{userID}> DB에 추가 완료!")
                 else:
                     return await self.message.reply(f"해당 유저(<@{userID}>)는 이미 DB에 존재합니다!")

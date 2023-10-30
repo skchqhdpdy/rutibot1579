@@ -212,7 +212,6 @@ class yurinyan:
                         db.update(f"UPDATE yurinyan_ SET discord_point = {i['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {i['discord_userid']}")
                 elif type(data) is dict:
                     db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
-                
                 return await self.message.reply(f"모든 유저들에게 `{addPoint}`포인트를 추가하였습니다!")
 
             elif "지급" in self.message.content:

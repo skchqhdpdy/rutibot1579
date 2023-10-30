@@ -164,6 +164,7 @@ class yurinyan:
             embed.add_field(name=f'{self.prefix}유리냥이 포인트 조회', value=f'특정 유저의 포인트를 조회합니다. (`{self.prefix}유리냥이 포인트 조회 <유저아이디> <포인트>`)')
             embed.add_field(name=f'{self.prefix}유리냥이 포인트 전체조회', value=f'모든 유저의 포인트를 조회합니다. (`{self.prefix}유리냥이 포인트 전체조회`)')
             embed.add_field(name=f'{self.prefix}유리냥이 포인트 유저추가', value=f'포인트 관리를 할 수 있게 DB에 유저를 추가합니다. (`{self.prefix}유리냥이 포인트 유저추가 <유저아이디>`)')
+            embed.add_field(name=f'{self.prefix}유리냥이 포인트 전체지급', value=f'모든 유저들에게 포인트를 지급합니다. (`{self.prefix}유리냥이 포인트 전체지급 <포인트>`)')
             embed.add_field(name=f'{self.prefix}유리냥이 포인트 지급', value=f'특정 유저에게 포인트를 지급합니다. (`{self.prefix}유리냥이 포인트 지급 <유저아이디> <포인트>`)')
             embed.timestamp = self.message.created_at
             embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
@@ -230,4 +231,4 @@ class yurinyan:
                 db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
                 return await self.message.reply(f"<@{userID}>에게 `{addPoint}`포인트 추가해서, 총 `{data['discord_point'] + addPoint}`포인트 입니다!")
             else:
-                return await self.message.reply(f"`{self.prefix}유리냥이 포인트 전체조회`, `{self.prefix}유리냥이 포인트 조회`, `{self.prefix}유리냥이 포인트 유저추가` `{self.prefix}유리냥이 포인트 지급` \n\n형식으로 입력해주세요!")
+                return await self.message.reply(f"`{self.prefix}유리냥이 포인트 전체조회`, `{self.prefix}유리냥이 포인트 조회`, `{self.prefix}유리냥이 포인트 유저추가`, `{self.prefix}유리냥이 포인트 전체지급`, `{self.prefix}유리냥이 포인트 지급` \n\n형식으로 입력해주세요!")

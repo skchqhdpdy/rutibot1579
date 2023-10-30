@@ -111,8 +111,20 @@ class yurinyan:
             return await self.message.reply(f"유저들의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
         elif type(data) is list:
             for i in data:
+                try:
+                    fromInfo = await self.bot.fetch_user(i["discord_userid"])
+                    toInfo = await self.bot.fetch_user(i["discord_userid"])
+                except:
+                    log.error("pointSelAll | type(data) is list | 유저 캐시 실패")
+
                 descript += f"<t:{i['last_update']}> 에 업데이트 됨. \n<@{i['discord_userid']}> == `{i['discord_point']}` Point \n\n"
         elif type(data) is dict:
+            try:
+                fromInfo = await self.bot.fetch_user(data["discord_userid"])
+                toInfo = await self.bot.fetch_user(data["discord_userid"])
+            except:
+                log.error("pointSelAll | type(data) is dict | 유저 캐시 실패")
+
             descript += f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{data['discord_userid']}> == `{data['discord_point']}` Point"
 
         embed = self.discord.Embed(
@@ -170,7 +182,7 @@ class yurinyan:
                 data = db.select(f"SELECT discord_point, last_update FROM yurinyan_ WHERE discord_userid = {userID}")
                 if data is None:
                     return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
-                return await self.message.reply(f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{userID}>의 포인트는 {data['discord_point']}포인트 입니다!")
+                return await self.message.reply(f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{userID}>의 포인트는 `{data['discord_point']}`포인트 입니다!")
 
             elif "유저추가" in self.message.content:
                 try:
@@ -180,11 +192,29 @@ class yurinyan:
                 
                 data = db.select(f"SELECT discord_userid FROM yurinyan_ WHERE discord_userid = {userID}")
                 if data is None:
-                    member = self.bot.get_user(userID)
+                    member = await self.bot.fetch_user(userID)
                     db.insert(f"INSERT INTO yurinyan_ (discord_userid, discord_username, discord_point, last_update) VALUE ({userID}, '{member.name}', 'NULL', {time.time()})")
                     return await self.message.reply(f"<@{userID}> DB에 추가 완료!")
                 else:
                     return await self.message.reply(f"해당 유저(<@{userID}>)는 이미 DB에 존재합니다!")
+
+            elif "전체지급" in self.message.content:
+                try:
+                    addPoint = int(self.message.content.split(' ')[3])
+                except:
+                    return await self.message.reply("지급할 포인트가 감지되지 않습니다!")
+                
+                data = db.select(f"SELECT * FROM yurinyan_")
+                if data is None:
+                    return await self.message.reply(f"유저들의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!") 
+                elif type(data) is list:
+                    for i in data:
+                        db.update(f"UPDATE yurinyan_ SET discord_point = {i['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {i['discord_userid']}")
+                elif type(data) is dict:
+                    db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
+                
+                return await self.message.reply(f"모든 유저들에게 `{addPoint}`포인트를 추가하였습니다!")
+
             elif "지급" in self.message.content:
                 try:
                     userID = self.message.content.split(' ')[3]
@@ -199,6 +229,6 @@ class yurinyan:
                 if data is None:
                     return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!") 
                 db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
-                return await self.message.reply(f"<@{userID}>에게 {addPoint}포인트 추가해서, 총 {data['discord_point'] + addPoint}포인트 입니다!")
+                return await self.message.reply(f"<@{userID}>에게 `{addPoint}`포인트 추가해서, 총 `{data['discord_point'] + addPoint}`포인트 입니다!")
             else:
                 return await self.message.reply(f"`{self.prefix}유리냥이 포인트 전체조회`, `{self.prefix}유리냥이 포인트 조회`, `{self.prefix}유리냥이 포인트 유저추가` `{self.prefix}유리냥이 포인트 지급` \n\n형식으로 입력해주세요!")

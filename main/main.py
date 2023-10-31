@@ -181,10 +181,11 @@ async def on_message(message):
         embed.add_field(name=f'{prefix}투표', value=f'O 또는 X 로 투표를 할 수 있습니다.\n사용법: `{prefix}투표 투표할 내용`')
         embed.add_field(name=f'{prefix}홈페이지', value='운영중인 홈페이지 주소를 보여줍니다.')
         embed.add_field(name=f'{prefix}github', value='깃허브 페이지')
-        embed.add_field(name=f'{prefix}clear [지울 만큼의 숫자]', value=f'`{prefix}clear` 명령어를 포함한 개수의 메세지 삭제')
+        embed.add_field(name=f'{prefix}clear [지울 만큼의 숫자]', value=f'입력받은 개수의 메세지 삭제 (`{prefix}clear` 명령어는 포함하지 않음)')
         embed.add_field(name=f'{prefix}help (!h)', value=f'`{prefix}help` (`{prefix}h`) 음악봇 관련 명령어 입니다.')
         embed.add_field(name=f'{prefix}마니또 추첨', value='마니또를 추첨하는 명령어 입니다. (합방 시작 전에 관리자들 끼리 합의 하에 추첨을 하고 그걸 고정해서 사용할 예정)')
         embed.add_field(name=f'{prefix}게임', value=f'`{prefix}게임` 명령어로 어떤 게임들이 있는지 확인하는 명령어 입니다.')
+        embed.add_field(name=f'{prefix}유리냥이', value=f'<@657145673296117760> 만 사용 가능한 명령어')
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         await message.reply(embed=embed)
@@ -256,8 +257,29 @@ async def on_message(message):
         
         await message.reply(embed=embed)
 
-    if message.content == f"{prefix}트위치":
+    if message.content == f"{prefix}트위치" or message.content == f"{prefix}twitch":
         await message.reply('<@399535550832443392> 야 너 기능 만들어!')
+
+        descript = ""
+        streamerList = functions.db().fetch("SELECT * FROM streamerList", param=None)
+        if streamerList is None:
+            return await message.reply(f"스트리머들의 데이터가 DB에 존재하지 않습니다! 관리자한테 문의해 주세요!")
+        elif type(streamerList) is list:
+            for i in streamerList:
+                descript += f"https://twitch.tv/{i['twitch_id']} | `{i['twitch_name']}`의 트위치 <@{i['discord_userid']}> \n\n"
+        elif type(streamerList) is dict:
+            descript += f"https://twitch.tv/{streamerList['twitch_id']} | `{streamerList['twitch_name']}`의 트위치 <@{streamerList['discord_userid']}>"
+        
+        embed = discord.Embed(
+            title='스트리머 리스트',
+            description=descript,
+            color=0xFF0000
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+
+        await message.reply(embed=embed)
 
     if message.content.startswith(f"{prefix}clear"):
         if not message.author.guild_permissions.manage_messages:
@@ -275,7 +297,12 @@ async def on_message(message):
         await message.channel.purge(limit=amount + 1)
         #무조건 message.channel.send 쓰기
         msg = await message.channel.send(f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 3초 후 삭제됩니다.")
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
+
+        for i in range(2, 0, -1):
+            await msg.edit(content=f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 {i}초 후 삭제됩니다.")
+            await asyncio.sleep(1)
+
         await msg.delete()
 
     # 마니또 추첨
@@ -587,9 +614,20 @@ async def on_message(message):
     secret_code = functions.db().fetch("SELECT * FROM rutibot_secretcode", param=None)
     if secret_code is None:
         log.error(f"secret_code | DB에 설정값이 존재 하지 않음!!!")
+    
+    secretCodeStatus = True if secret_code["secretcode_status"] == 1 else False
+    secretCode = json.loads(secret_code["SecretCode"])
+    secretCodeCh = secret_code["message_channel_id"]
+    isFound_and_uid = json.loads(secret_code["isFound_and_uid"])
 
-    if message.content in secret_code["SecretCode"] and message.channel.id == secret_code["message_channel_id"]:
-        await message.reply("이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
+    for i, j, num in zip(secretCode, isFound_and_uid, range(len(isFound_and_uid))):
+        if secretCodeStatus and message.content == i and message.channel.id == secretCodeCh:
+            if j == 0:
+                await message.reply("이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
+                isFound_and_uid[num] = message.author.id
+                functions.db().execute("UPDATE rutibot_secretcode SET isFound_and_uid = %s", (json.dumps(isFound_and_uid)))
+            else:
+                await message.reply(f"<@{j}> 님이 이미 해당 시크릿 코드를 맞췄습니다!")
 
 ##/////////////////////////////////////////////////////////////따로뺴둠//////////////////////////////////////////////////////////////##
 

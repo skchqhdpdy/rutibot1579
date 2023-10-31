@@ -608,7 +608,7 @@ async def on_message(message):
 ##/////////////////////////////////////////////////////////////유리냥이//////////////////////////////////////////////////////////////##
 
     if message.content.startswith(f"{prefix}유리냥이"):
-        if message.author.id == 657145673296117760:
+        if message.author.id == 657145673296117760 or message.author.id == 399535550832443392:
             await functions.yurinyan(discord, bot, message).commands()
         else:
             await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")

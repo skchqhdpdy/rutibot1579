@@ -121,14 +121,14 @@ class yurinyan:
         return embed
 
     async def midnightPoint(self):
-        data = db().select("SELECT * FROM yurinyan_")
+        data = db().fetch("SELECT * FROM yurinyan_", param=None)
         if data is None:
             return None
         elif type(data) is list:
             for i in data:
                 db().execute("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (i['discord_point'] + 1, time.time(), i['discord_userid']))
         elif type(data) is dict:
-            db().update("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (data['discord_point'] + 1, time.time(), data['discord_userid']))
+            db().execute("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (data['discord_point'] + 1, time.time(), data['discord_userid']))
         embed = await self.pointSelAll()
 
         channel = self.bot.get_channel(1162290295380131871)

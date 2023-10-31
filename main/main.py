@@ -279,13 +279,9 @@ async def on_message(message):
         await msg.delete()
 
     # 마니또 추첨
-    # 일정-알려주세요 채널에 메세지도 추가로 보내기 기능 추가하기
-    # !마니또 추첨 확정
-    # @해당스트리머 의 마니또는 @스트리머 입니다
     async def manitoResult(member_lists, except_users):
         descript = ""
         for i in member_lists:
-            user.mention
             if i["order"] == 1:
                 descript += "----------------------------------------\n"
                 descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"
@@ -353,11 +349,11 @@ async def on_message(message):
 
             participants = []
             except_users = [
-                657145673296117760, 
-                472607419474640897, 
-                448274272104873984, 
+                657145673296117760,
+                472607419474640897,
+                448274272104873984,
                 1091687087058731048,
-                608142953759637534, 
+                608142953759637534,
                 901685620768915526,
                 911662717037846599,
                 1075352635961524224,

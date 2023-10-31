@@ -16,25 +16,30 @@ def setConfig(file, update):
         json.dump(update, config_file, indent=4)
 
 class db:
-    def connect():
-        config = getConfig("config.json")
-        host = config["db"]["host"]
-        port = int(config["db"]["port"])
-        username = config["db"]["username"]
-        password = config["db"]["password"]
-        database = config["db"]["database"]
+    def __init__(self):
+        self.config = getConfig("config.json")
+        self.host =  self.config["db"]["host"]
+        self.port = int(self.config["db"]["port"])
+        self.username =  self.config["db"]["username"]
+        self.password =  self.config["db"]["password"]
+        self.database =  self.config["db"]["database"]
 
-        pydb = pymysql.connect(host=host, port=port, user=username, passwd=password, db=database, charset='utf8')
-        return pydb
+        try:
+            self.pydb = pymysql.connect(host=self.host, port=self.port, user=self.username, passwd=self.password, db=self.database, charset='utf8')
+        except:
+            log.error(f"{self.database} DB 연결 실패!")
+            exit()
 
-    def select(sql):
-        pydb = db.connect()
-        cursor = pydb.cursor()
-        cursor.execute(sql)
+    def fetch(self, sql, param):
+        cursor = self.pydb.cursor()
+        if param is None or param == "":
+            cursor.execute(sql)
+        else:
+            cursor.execute(sql, param)
 
         columns = [column[0] for column in cursor.description]
         result = cursor.fetchall()
-        pydb.close()
+        self.pydb.close()
 
         if not result:
             return None
@@ -52,26 +57,15 @@ class db:
                 d.append(data)
             return d
         
-    def insert(sql):
-        pydb = db.connect()
-        cursor = pydb.cursor()
-        cursor.execute(sql)
-        pydb.commit()
-        pydb.close()
+    def execute(self, sql, param):
+        cursor = self.pydb.cursor()
+        if param is None or param == "":
+            cursor.execute(sql)
+        else:
+            cursor.execute(sql, param)
+        self.pydb.commit()
+        self.pydb.close()
 
-    def update(sql):
-        pydb = db.connect()
-        cursor = pydb.cursor()
-        cursor.execute(sql)
-        pydb.commit()
-        pydb.close()
-
-    def delete(sql):
-        pydb = db.connect()
-        cursor = pydb.cursor()
-        cursor.execute(sql)
-        pydb.commit()
-        pydb.close()
 
 # 디코 채널 로그
 async def send_log_discord(bot, channel_id, content, isEmbed=False):
@@ -92,7 +86,7 @@ async def send_log_discord(bot, channel_id, content, isEmbed=False):
 # 유리냥이
 class yurinyan:
     def __init__(self, discord, bot, message):
-        config = db.select("SELECT prefix, guild_id, discord_log_channel FROM rutibot_setting")
+        config = db().fetch("SELECT prefix, guild_id, discord_log_channel FROM rutibot_setting", param=None)
         if config is None:
             log.error(f"config | DB에 설정값이 존재 하지 않음!!!")
             exit()
@@ -106,25 +100,13 @@ class yurinyan:
 
     async def pointSelAll(self):
         descript = ""
-        data = db.select("SELECT * FROM yurinyan_")
+        data = db().fetch("SELECT * FROM yurinyan_", param=None)
         if data is None:
             return await self.message.reply(f"유저들의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
         elif type(data) is list:
             for i in data:
-                try:
-                    fromInfo = await self.bot.fetch_user(i["discord_userid"])
-                    toInfo = await self.bot.fetch_user(i["discord_userid"])
-                except:
-                    log.error("pointSelAll | type(data) is list | 유저 캐시 실패")
-
                 descript += f"<t:{i['last_update']}> 에 업데이트 됨. \n<@{i['discord_userid']}> == `{i['discord_point']}` Point \n\n"
         elif type(data) is dict:
-            try:
-                fromInfo = await self.bot.fetch_user(data["discord_userid"])
-                toInfo = await self.bot.fetch_user(data["discord_userid"])
-            except:
-                log.error("pointSelAll | type(data) is dict | 유저 캐시 실패")
-
             descript += f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{data['discord_userid']}> == `{data['discord_point']}` Point"
 
         embed = self.discord.Embed(
@@ -139,14 +121,14 @@ class yurinyan:
         return embed
 
     async def midnightPoint(self):
-        data = db.select("SELECT * FROM yurinyan_")
+        data = db().select("SELECT * FROM yurinyan_")
         if data is None:
             return None
         elif type(data) is list:
             for i in data:
-                db.update(f"UPDATE yurinyan_ SET discord_point = {i['discord_point'] + 1}, last_update = '{time.time()}' WHERE discord_userid = {i['discord_userid']}")
+                db().execute("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (i['discord_point'] + 1, time.time(), i['discord_userid']))
         elif type(data) is dict:
-            db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + 1}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
+            db().update("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (data['discord_point'] + 1, time.time(), data['discord_userid']))
         embed = await self.pointSelAll()
 
         channel = self.bot.get_channel(1162290295380131871)
@@ -180,7 +162,7 @@ class yurinyan:
                 except:
                     return await self.message.reply("유저 아이디가 감지되지 않습니다!")
                 
-                data = db.select(f"SELECT discord_point, last_update FROM yurinyan_ WHERE discord_userid = {userID}")
+                data = db().fetch("SELECT discord_point, last_update FROM yurinyan_ WHERE discord_userid = %s", (userID))
                 if data is None:
                     return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!")
                 return await self.message.reply(f"<t:{data['last_update']}> 에 업데이트 됨. \n<@{userID}>의 포인트는 `{data['discord_point']}`포인트 입니다!")
@@ -191,10 +173,10 @@ class yurinyan:
                 except:
                     return await self.message.reply("유저 아이디가 감지되지 않습니다!")
                 
-                data = db.select(f"SELECT discord_userid FROM yurinyan_ WHERE discord_userid = {userID}")
+                data = db().fetch("SELECT discord_userid FROM yurinyan_ WHERE discord_userid = %s", (userID))
                 if data is None:
                     member = await self.bot.fetch_user(userID)
-                    db.insert(f"INSERT INTO yurinyan_ (discord_userid, discord_username, discord_point, last_update) VALUE ({userID}, '{member.name}', 'NULL', {time.time()})")
+                    db().execute(f"INSERT INTO yurinyan_ (discord_userid, discord_username, discord_point, last_update) VALUE (%s, %s, %s, %s)", (userID, member.name, 'NULL', time.time()))
                     return await self.message.reply(f"<@{userID}> DB에 추가 완료!")
                 else:
                     return await self.message.reply(f"해당 유저(<@{userID}>)는 이미 DB에 존재합니다!")
@@ -205,14 +187,14 @@ class yurinyan:
                 except:
                     return await self.message.reply("지급할 포인트가 감지되지 않습니다!")
                 
-                data = db.select(f"SELECT * FROM yurinyan_")
+                data = db().fetch(f"SELECT * FROM yurinyan_", param=None)
                 if data is None:
                     return await self.message.reply(f"유저들의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!") 
                 elif type(data) is list:
                     for i in data:
-                        db.update(f"UPDATE yurinyan_ SET discord_point = {i['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {i['discord_userid']}")
+                        db().execute("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (i['discord_point'] + addPoint, time.time(), i['discord_userid']))
                 elif type(data) is dict:
-                    db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
+                    db().execute("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (data['discord_point'] + addPoint, time.time(), data['discord_userid']))
                 return await self.message.reply(f"모든 유저들에게 `{addPoint}`포인트를 추가하였습니다!")
 
             elif "지급" in self.message.content:
@@ -225,10 +207,10 @@ class yurinyan:
                 except:
                     return await self.message.reply("지급할 포인트가 감지되지 않습니다!")
                 
-                data = db.select(f"SELECT * FROM yurinyan_ WHERE discord_userid = {userID}")
+                data = db().fetch(f"SELECT * FROM yurinyan_ WHERE discord_userid = %s", (userID))
                 if data is None:
                     return await self.message.reply(f"해당 유저의 데이터가 DB에 존재하지 않습니다! `{self.prefix}유리냥이 포인트 유저추가` 명령어로 먼저 유저를 추가하세요!") 
-                db.update(f"UPDATE yurinyan_ SET discord_point = {data['discord_point'] + addPoint}, last_update = '{time.time()}' WHERE discord_userid = {data['discord_userid']}")
+                db().execute("UPDATE yurinyan_ SET discord_point = %s, last_update = %s WHERE discord_userid = %s", (data['discord_point'] + addPoint, time.time(), data['discord_userid']))
                 return await self.message.reply(f"<@{userID}>에게 `{addPoint}`포인트 추가해서, 총 `{data['discord_point'] + addPoint}`포인트 입니다!")
             else:
                 return await self.message.reply(f"`{self.prefix}유리냥이 포인트 전체조회`, `{self.prefix}유리냥이 포인트 조회`, `{self.prefix}유리냥이 포인트 유저추가`, `{self.prefix}유리냥이 포인트 전체지급`, `{self.prefix}유리냥이 포인트 지급` \n\n형식으로 입력해주세요!")

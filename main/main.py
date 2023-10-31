@@ -188,7 +188,7 @@ async def on_message(message):
         embed.add_field(name=f'{prefix}유리냥이', value=f'<@657145673296117760> 만 사용 가능한 명령어')
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-        await message.reply(embed=embed)
+        return await message.reply(embed=embed)
 
     if message.content == f"{prefix}게임":
         embed = discord.Embed(
@@ -202,7 +202,7 @@ async def on_message(message):
         embed.add_field(name=f'{prefix}계란깨기종료', value='계란깨기 게임을 종료합니다.')
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-        await message.reply(embed=embed)
+        return await message.reply(embed=embed)
 
 
     if message.content.startswith(f"{prefix}투표"):
@@ -224,6 +224,7 @@ async def on_message(message):
         message = await message.reply(embed=embed)
         await message.add_reaction("⭕")
         await message.add_reaction("❌")
+        return
 
     if message.content.startswith(f"{prefix}홈페이지"):
         embed = discord.Embed(
@@ -237,10 +238,10 @@ async def on_message(message):
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        await message.reply(embed=embed)
+        return await message.reply(embed=embed)
 
     if message.content == f"{prefix}서버주소" or message.content == f"{prefix}서버 주소" or message.content == f"{prefix}마크":
-        await message.reply(f'`{prefix}홈페이지` 명령어를 사용해주세요!')
+        return await message.reply(f'`{prefix}홈페이지` 명령어를 사용해주세요!')
 
     if message.content == f"{prefix}github" or message.content == f"{prefix}깃허브" or message.content == f"{prefix}깃헙":
         embed = discord.Embed(
@@ -255,10 +256,10 @@ async def on_message(message):
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         
-        await message.reply(embed=embed)
+        return await message.reply(embed=embed)
 
     if message.content == f"{prefix}트위치" or message.content == f"{prefix}twitch":
-        await message.reply('<@399535550832443392> 야 너 기능 만들어!')
+        await message.reply('<@399535550832443392> 야 너 기능 만들어! (유저 추가 하셈 ㅇㅇ)')
 
         descript = ""
         streamerList = functions.db().fetch("SELECT * FROM streamerList", param=None)
@@ -279,7 +280,7 @@ async def on_message(message):
         embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
-        await message.reply(embed=embed)
+        return await message.reply(embed=embed)
 
     if message.content.startswith(f"{prefix}clear"):
         if not message.author.guild_permissions.manage_messages:
@@ -303,7 +304,7 @@ async def on_message(message):
             await msg.edit(content=f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 {i}초 후 삭제됩니다.")
             await asyncio.sleep(1)
 
-        await msg.delete()
+        return await msg.delete()
 
     # 마니또 추첨
     async def manitoResult(member_lists, except_users):
@@ -475,7 +476,7 @@ async def on_message(message):
                         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
                         msg_pin = await chans.send(f"<#{message.channel.id}> 채널에서 `{prefix}마니또 추첨 확정` 명령어를 사용하여 마니또의 결과가 나왔습니다!", embed=embed)
-                        await msg_pin.pin()
+                        return await msg_pin.pin()
 
         if selAll and not pick and not confirmed:
             if not message.author.guild_permissions.manage_messages:
@@ -502,11 +503,12 @@ async def on_message(message):
             embed.timestamp = message.created_at
             embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
-            await message.reply(f"마지막 추첨은 <t:{orderTime}>에 추첨되었습니다!", embed=embed)
+            return await message.reply(f"마지막 추첨은 <t:{orderTime}>에 추첨되었습니다!", embed=embed)
 
         if not sel and not selAll and not pick and not confirmed:
-            await message.reply(f"`{prefix}마니또 전체조회`(관리자용), `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
-            return
+            return await message.reply(f"`{prefix}마니또 전체조회`(관리자용), `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
+
+        return
 
     # 계란 꺠기 게임
     # 게임 상태 변수
@@ -541,7 +543,7 @@ async def on_message(message):
                 start_time = %s
         """, (0, '[]', '{}', 'NULL', 'NULL'))
         await message.reply(msg)
-        await message.channel.send('게임 오버!\n--------------------------------------')
+        return await message.channel.send('게임 오버!\n--------------------------------------')
 
     if message.content == f'{prefix}계란깨기시작' and not isGameActive_eggGame:
 
@@ -560,17 +562,18 @@ async def on_message(message):
         functions.db().execute("UPDATE rutibot_game_egg SET brokeEggNumber_eggGame = %s", (str(brokeEggNumber_eggGame)))
 
         print(f"날 계란목록 : {brokeEggNumber_eggGame}")
+        return
 
     elif message.content == f'{prefix}계란깨기시작' and isGameActive_eggGame:
-        await message.reply(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
+        return await message.reply(f'<#{channelID_eggGame}> 채널에서 게임이 진행 중입니다!')
     
     elif (message.content == f'{prefix}계란깨기종료' or message.content == f'{prefix}계란깨기중지') and isGameActive_eggGame:
         msg = f'<@{message.author.id}>님이 게임을 종료하였습니다.'
-        await exitEggGame(message, msg)
+        return await exitEggGame(message, msg)
     
     elif message.content.startswith(f'{prefix}계란깨기'):
         if not isGameActive_eggGame:
-            await message.reply(f'`{prefix}계란깨기시작` 명령어로 게임을 먼저 시작하세요!')
+            return await message.reply(f'`{prefix}계란깨기시작` 명령어로 게임을 먼저 시작하세요!')
         else:
             try:
                 userNumber = int(message.content.split(' ')[1])
@@ -578,17 +581,17 @@ async def on_message(message):
                 userNumber = 0
 
             if userNumber < 1 or userNumber > eggCountMax:
-                await message.reply(f'1에서 {eggCountMax} 사이의 숫자를 입력하세요!')
+                return await message.reply(f'1에서 {eggCountMax} 사이의 숫자를 입력하세요!')
             elif str(userNumber) in players_eggGame:
-                await message.reply(f'{userNumber}는 <@{players_eggGame[str(userNumber)]}>님이 입력했던 숫자입니다. 다른 숫자를 입력하세요!')
+                return await message.reply(f'{userNumber}는 <@{players_eggGame[str(userNumber)]}>님이 입력했던 숫자입니다. 다른 숫자를 입력하세요!')
             elif userNumber in brokeEggNumber_eggGame:
                 msg = f'<@{message.author.id}>님이 날 계란 {brokeEggNumber_eggGame} 중 ({userNumber}번 계란)을 깼습니다.'
-                await exitEggGame(message, msg)
+                return await exitEggGame(message, msg)
             else:
                 players_eggGame[str(userNumber)] = message.author.id
                 functions.db().execute("UPDATE rutibot_game_egg SET players_eggGame = %s", (json.dumps(players_eggGame)))
                 remainingEggs = eggCountMax - len(players_eggGame)
-                await message.reply(f'{userNumber}는 삶은 계란입니다. 남은 계란의 수는 {remainingEggs}개 입니다.')
+                return await message.reply(f'{userNumber}는 삶은 계란입니다. 남은 계란의 수는 {remainingEggs}개 입니다.')
 
     #elif message.channel.id == channelID_eggGame and message.content.startswith(prefix):
     else:
@@ -603,13 +606,13 @@ async def on_message(message):
             now = round(time())
 
         if isGameActive_eggGame and (start_time + timer_sec) < now:
-            await bot.get_channel(channelID_eggGame).send(f"{round(timer_sec / 60)}분 제한중, {round((now - start_time) / 60)}분간 이용하지 않아 계란깨기 게임이 중지되었습니다.")
+            return await bot.get_channel(channelID_eggGame).send(f"{round(timer_sec / 60)}분 제한중, {round((now - start_time) / 60)}분간 이용하지 않아 계란깨기 게임이 중지되었습니다.")
 
 ##////////////////////////////////////////////////////////////이스터 애그/////////////////////////////////////////////////////////////##
 
     # 비밀 메시지 처리
     if message.content == "비밀":
-        await message.reply("꺅 비밀 들켜버렸다")
+        return await message.reply("꺅 비밀 들켜버렸다")
 
     secret_code = functions.db().fetch("SELECT * FROM rutibot_secretcode", param=None)
     if secret_code is None:
@@ -623,33 +626,33 @@ async def on_message(message):
     for i, j, num in zip(secretCode, isFound_and_uid, range(len(isFound_and_uid))):
         if secretCodeStatus and message.content == i and message.channel.id == secretCodeCh:
             if j == 0:
-                await message.reply("이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
                 isFound_and_uid[num] = message.author.id
                 functions.db().execute("UPDATE rutibot_secretcode SET isFound_and_uid = %s", (json.dumps(isFound_and_uid)))
+                return await message.reply("이 시크릿 코드 어떻게 아셨나요? 때려맞추신건 아니겠죠? 어쨌든간에 정답입니다!!(?)")
             else:
-                await message.reply(f"<@{j}> 님이 이미 해당 시크릿 코드를 맞췄습니다!")
+                return await message.reply(f"<@{j}> 님이 이미 해당 시크릿 코드를 맞췄습니다!")
 
 ##/////////////////////////////////////////////////////////////따로뺴둠//////////////////////////////////////////////////////////////##
 
 # 봇 초대 명령어
     if message.content == f"{prefix}봇" or message.content == f"{prefix}봇 초대" or message.content == f"{prefix}봇초대" or message.content == f"{prefix}invite":
-        await message.reply(f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot")
+        return await message.reply(f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot")
 
 # Ping 명령어
     if message.content == f"{prefix}핑" or message.content == f"{prefix}ping":
         time_take = round(bot.latency * 1000)  # 서버 핑을 밀리초(ms)로 계산
         msg = f"서버 핑은 **{time_take}ms** 입니다."
         log.info(msg)
-        await message.reply(msg)
+        return await message.reply(msg)
 
 
 ##/////////////////////////////////////////////////////////////유리냥이//////////////////////////////////////////////////////////////##
 
     if message.content.startswith(f"{prefix}유리냥이"):
         if message.author.id == 657145673296117760 or message.author.id == 399535550832443392:
-            await functions.yurinyan(discord, bot, message).commands()
+            return await functions.yurinyan(discord, bot, message).commands()
         else:
-            await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")
+            return await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")
 
 # 봇을 실행합니다.
 bot.run(token)

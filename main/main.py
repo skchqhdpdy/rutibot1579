@@ -282,6 +282,7 @@ async def on_message(message):
     async def manitoResult(member_lists, except_users):
         descript = ""
         for i in member_lists:
+            userCashe = bot.get_user(i["from"])
             if i["order"] == 1:
                 descript += "----------------------------------------\n"
                 descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"

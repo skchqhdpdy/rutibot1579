@@ -12,7 +12,7 @@ import pytz
 
 import functions
 
-config = functions.db.select("SELECT * FROM rutibot_setting")
+config = functions.db().fetch("SELECT * FROM rutibot_setting", param=None)
 if config is None:
     log.error(f"config | DB에 설정값이 존재 하지 않음!!!")
     exit()
@@ -99,7 +99,7 @@ async def on_member_remove(member):
     await channel.send(f'<@{member.id}>', embed=embed)
 
 #zira봇 역할
-zira = functions.db.select("SELECT * FROM rutibot_zira WHERE type = 'minecraft'")
+zira = functions.db().fetch("SELECT * FROM rutibot_zira WHERE type = %s", ("minecraft"))
 if zira is None:
     log.error(f"zira | DB에 설정값이 존재 하지 않음!!!")
 else:
@@ -285,12 +285,7 @@ async def on_message(message):
     async def manitoResult(member_lists, except_users):
         descript = ""
         for i in member_lists:
-            try:
-                fromInfo = await bot.fetch_user(i["from"])
-                toInfo = await bot.fetch_user(i["to"])
-            except:
-                log.error("member_lists | 유저 캐시 실패")
-
+            user.mention
             if i["order"] == 1:
                 descript += "----------------------------------------\n"
                 descript += f"{i['order']}번째 | <@{i['from']}> --> <@{i['to']}>\n"
@@ -303,12 +298,6 @@ async def on_message(message):
         descript += "----------------------------------------\n예외처리 (참가 안함)\n"
 
         for user in except_users:
-            try:
-                fromInfo = await bot.fetch_user(i["from"])
-                toInfo = await bot.fetch_user(i["to"])
-            except:
-                log.error("except_users | 유저 캐시 실패")
-
             descript += f"<@{user}>\n"
 
         descript += "----------------------------------------"
@@ -418,10 +407,10 @@ async def on_message(message):
 
             await message.reply(embed=embed)
 
-            functions.db.insert(f"INSERT INTO rutibot_manito (id, data_users, except_users, confirmed, datetime) VALUE ('NULL', '{json.dumps(member_lists)}', '{str(except_users)}', {confirmed}, {time()})")
+            functions.db().execute("INSERT INTO rutibot_manito (id, data_users, except_users, confirmed, datetime) VALUE (%s, %s, %s, %s, %s)", ('NULL', json.dumps(member_lists), str(except_users), confirmed, time()))
         
         if confirmed:
-            mt = functions.db.select("SELECT * FROM rutibot_manito WHERE confirmed = 1 ORDER BY datetime DESC LIMIT 1")
+            mt = functions.db().fetch("SELECT * FROM rutibot_manito WHERE confirmed = %s ORDER BY datetime DESC LIMIT 1", (1))
             if mt is None:
                 log.error(f"mt | DB에 설정값이 존재 하지 않음!!!")
                 return await message.reply("마니또 추첨 확정 데이터가 없습니다!")
@@ -432,7 +421,7 @@ async def on_message(message):
             await message.reply(f"<t:{orderTime}> 에 마니또 확정됨!")
 
             guild = bot.get_guild(guild_id)
-            manito_category_id = functions.db.select("SELECT manito_category_id FROM rutibot_setting")["manito_category_id"]
+            manito_category_id = functions.db().fetch("SELECT manito_category_id FROM rutibot_setting", param=None)["manito_category_id"]
             ct = discord.utils.get(guild.categories, id=manito_category_id)
             ewol = []
             for i in [member for member in guild.members if discord.utils.get(guild.roles, id=manager_role_id) in member.roles]:
@@ -468,7 +457,7 @@ async def on_message(message):
             if not message.author.guild_permissions.manage_messages:
                 return await message.reply("권한이 없습니다.")
 
-            mt = functions.db.select("SELECT * FROM rutibot_manito WHERE confirmed = 1 ORDER BY datetime DESC LIMIT 1")
+            mt = functions.db().fetch("SELECT * FROM rutibot_manito WHERE confirmed = %s ORDER BY datetime DESC LIMIT 1", (1))
             if mt is None:
                 log.error(f"mt | DB에 설정값이 존재 하지 않음!!!")
                 return await message.reply("마니또 추첨 확정 데이터가 없습니다!")
@@ -497,7 +486,7 @@ async def on_message(message):
 
     # 계란 꺠기 게임
     # 게임 상태 변수
-    game_egg = functions.db.select("SELECT * from rutibot_game_egg")
+    game_egg = functions.db().fetch("SELECT * from rutibot_game_egg", param=None)
     if game_egg is None:
         log.error(f"game_egg | DB에 설정값이 존재 하지 않음!!!")
     else:
@@ -518,33 +507,33 @@ async def on_message(message):
         return bot.loop.call_later(300, game_timeout)
 
     async def exitEggGame(message, msg):
-        functions.db.update("""
+        functions.db().execute("""
             UPDATE rutibot_game_egg
             SET
-                isGameActive_eggGame = 0,
-                brokeEggNumber_eggGame = '[]',
-                players_eggGame = '{}',
-                channelID_eggGame = 'NULL',
-                start_time = 'NULL'
-        """)
+                isGameActive_eggGame = %s,
+                brokeEggNumber_eggGame = %s,
+                players_eggGame = %s,
+                channelID_eggGame = %s,
+                start_time = %s
+        """, (0, '[]', '{}', 'NULL', 'NULL'))
         await message.reply(msg)
         await message.channel.send('게임 오버!\n--------------------------------------')
 
     if message.content == f'{prefix}계란깨기시작' and not isGameActive_eggGame:
 
-        functions.db.update(f"""
+        functions.db().execute("""
             UPDATE rutibot_game_egg
             SET
-                isGameActive_eggGame = 1,
-                channelID_eggGame = {message.channel.id},
-                start_time = '{time()}'
-        """)
+                isGameActive_eggGame = %s,
+                channelID_eggGame = %s,
+                start_time = %s
+        """, (1, message.channel.id, time()))
 
         await message.reply('계란깨기 게임을 시작합니다!')
 
         # 1부터 100까지의 숫자 중에서 5개를 선택
         brokeEggNumber_eggGame = random.sample(range(1, eggCountMax + 1), eggCount)
-        functions.db.update(f"UPDATE rutibot_game_egg SET brokeEggNumber_eggGame = '{str(brokeEggNumber_eggGame)}'")
+        functions.db().execute("UPDATE rutibot_game_egg SET brokeEggNumber_eggGame = %s", (str(brokeEggNumber_eggGame)))
 
         print(f"날 계란목록 : {brokeEggNumber_eggGame}")
 
@@ -573,15 +562,13 @@ async def on_message(message):
                 await exitEggGame(message, msg)
             else:
                 players_eggGame[str(userNumber)] = message.author.id
-                log.debug(f"players_eggGame = {players_eggGame}")
-                log.debug(f"players_eggGame[str(userNumber)] = {players_eggGame[str(userNumber)]}")
-                functions.db.update(f"UPDATE rutibot_game_egg SET players_eggGame = '{json.dumps(players_eggGame)}'")
+                functions.db().execute("UPDATE rutibot_game_egg SET players_eggGame = %s", (json.dumps(players_eggGame)))
                 remainingEggs = eggCountMax - len(players_eggGame)
                 await message.reply(f'{userNumber}는 삶은 계란입니다. 남은 계란의 수는 {remainingEggs}개 입니다.')
 
     #elif message.channel.id == channelID_eggGame and message.content.startswith(prefix):
     else:
-        exfired_check = functions.db.select("SELECT timer_sec, isGameActive_eggGame, channelID_eggGame, start_time from rutibot_game_egg")
+        exfired_check = functions.db().fetch("SELECT timer_sec, isGameActive_eggGame, channelID_eggGame, start_time from rutibot_game_egg", param=None)
         if exfired_check is None:
             log.error(f"exfired_check | DB에 설정값이 존재 하지 않음!!!")
         else:
@@ -600,7 +587,7 @@ async def on_message(message):
     if message.content == "비밀":
         await message.reply("꺅 비밀 들켜버렸다")
 
-    secret_code = functions.db.select("SELECT * FROM rutibot_secretcode")
+    secret_code = functions.db().fetch("SELECT * FROM rutibot_secretcode", param=None)
     if secret_code is None:
         log.error(f"secret_code | DB에 설정값이 존재 하지 않음!!!")
 
@@ -624,7 +611,7 @@ async def on_message(message):
 ##/////////////////////////////////////////////////////////////유리냥이//////////////////////////////////////////////////////////////##
 
     if message.content.startswith(f"{prefix}유리냥이"):
-        if message.author.id == 657145673296117760 or True:
+        if message.author.id == 657145673296117760:
             await functions.yurinyan(discord, bot, message).commands()
         else:
             await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")

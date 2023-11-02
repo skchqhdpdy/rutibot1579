@@ -44,7 +44,6 @@ async def check_midnight():
         r = await functions.yurinyan(discord, bot, message="").midnightPoint()
         if r is None:
             await functions.send_log_discord(bot, 1162290295380131871, "`yurinyan_` 테이블에 유저 정보가 없음! (포인트)")
-        await functions.send_log_discord(bot, discord_log_channel, f"<@399535550832443392> 얌마! 0시 자정이다!!!")
 
 # 봇이 준비되었을 때 실행되는 이벤트 핸들러
 @bot.event

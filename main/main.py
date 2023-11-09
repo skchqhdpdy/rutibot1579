@@ -54,58 +54,60 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member):
-    channel = bot.get_channel(welcome_channel)
-    if channel is None:
-        return
+    if member.guild.id == guild_id:
+        channel = bot.get_channel(welcome_channel)
+        if channel is None:
+            return
 
-    embed = discord.Embed(
-        title=f'안녕하세요, {member.name} 님! 서버에 가입하신 것을 환영합니다!',
-        color=0xF280EB
-    )
-    embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
-    embed.set_thumbnail(url=member.avatar_url)
-    embed.timestamp = datetime.datetime.now(pytz.utc)
-    embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+        embed = discord.Embed(
+            title=f'안녕하세요, {member.name} 님! 서버에 가입하신 것을 환영합니다!',
+            color=0xF280EB
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.timestamp = datetime.datetime.now(pytz.utc)
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
-    await channel.send(f'<@{member.id}>', embed=embed)
+        await channel.send(f'<@{member.id}>', embed=embed)
 
-    role_id_to_add = welcome_role_id
-    role_to_add = get(member.guild.roles, id=role_id_to_add)
-    if role_to_add is not None:
-        try:
-            await member.add_roles(role_to_add)
-            await functions.send_log_discord(bot, discord_log_channel, f'<@{member.id}>에게 <@&{role_id_to_add}> 인증되지 않은 역할 부여함')
-        except Exception as error:
-            log.error(f'역할 추가 중 오류 발생: {error}')
-    else:
-        log.error(f'역할을 찾을 수 없음: {role_id_to_add}')
+        role_id_to_add = welcome_role_id
+        role_to_add = get(member.guild.roles, id=role_id_to_add)
+        if role_to_add is not None:
+            try:
+                await member.add_roles(role_to_add)
+                await functions.send_log_discord(bot, discord_log_channel, f'<@{member.id}>에게 <@&{role_id_to_add}> 인증되지 않은 역할 부여함')
+            except Exception as error:
+                log.error(f'역할 추가 중 오류 발생: {error}')
+        else:
+            log.error(f'역할을 찾을 수 없음: {role_id_to_add}')
 
 @bot.event
 async def on_member_remove(member):
-    channel = bot.get_channel(welcome_channel)
-    if channel is None:
-        return
+    if member.guild.id == guild_id:
+        channel = bot.get_channel(welcome_channel)
+        if channel is None:
+            return
 
-    embed = discord.Embed(
-        title=f'안녕히 가세요, {member.name} 님! 서버에서 나가셨습니다.',
-        color=0xFF5733
-    )
-    embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
-    embed.set_thumbnail(url=member.avatar_url)
-    embed.timestamp = datetime.datetime.now(pytz.utc)
-    embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
+        embed = discord.Embed(
+            title=f'안녕히 가세요, {member.name} 님! 서버에서 나가셨습니다.',
+            color=0xFF5733
+        )
+        embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
+        embed.set_thumbnail(url=member.avatar_url)
+        embed.timestamp = datetime.datetime.now(pytz.utc)
+        embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
 
-    await channel.send(f'<@{member.id}>', embed=embed)
+        await channel.send(f'<@{member.id}>', embed=embed)
 
-#zira봇 역할
-zira = functions.db().fetch("SELECT * FROM rutibot_zira WHERE type = %s", ("minecraft"))
-if zira is None:
-    log.error(f"zira | DB에 설정값이 존재 하지 않음!!!")
-else:
-    CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
-    MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
-    EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
-    ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
+    #zira봇 역할
+    zira = functions.db().fetch("SELECT * FROM rutibot_zira WHERE type = %s", ("minecraft"))
+    if zira is None:
+        log.error(f"zira | DB에 설정값이 존재 하지 않음!!!")
+    else:
+        CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
+        MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
+        EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
+        ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
 
 @bot.event
 async def on_raw_reaction_add(payload):

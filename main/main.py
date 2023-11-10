@@ -99,15 +99,15 @@ async def on_member_remove(member):
 
         await channel.send(f'<@{member.id}>', embed=embed)
 
-    #zira봇 역할
-    zira = functions.db().fetch("SELECT * FROM rutibot_zira WHERE type = %s", ("minecraft"))
-    if zira is None:
-        log.error(f"zira | DB에 설정값이 존재 하지 않음!!!")
-    else:
-        CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
-        MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
-        EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
-        ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
+#zira봇 역할
+zira = functions.db().fetch("SELECT * FROM rutibot_zira WHERE type = %s", ("minecraft"))
+if zira is None:
+    log.error(f"zira | DB에 설정값이 존재 하지 않음!!!")
+else:
+    CHANNEL_ID = zira["CHANNEL_ID"]  # 이벤트를 감지할 채널 ID
+    MESSAGE_ID = zira["MESSAGE_ID"]  # 이벤트를 감지할 메시지 ID
+    EMOJI_NAME = zira["EMOJI_NAME"]  # 반응에 사용할 이모지 이름
+    ROLE_ID = zira["ROLE_ID"]  # 부여할 역할 ID
 
 @bot.event
 async def on_raw_reaction_add(payload):

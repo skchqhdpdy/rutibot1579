@@ -39,7 +39,7 @@ bot = discord.Client(intents=intents)
 @tasks.loop(seconds=1)
 async def check_midnight():
     now = datetime.datetime.now()
-    if now.hour == 0 and now.minute == 0:
+    if now.hour == 0 and now.minute == 0 and now.second == 0:
         # 0시에 실행할 작업을 여기에 추가
         r = await functions.yurinyan(discord, bot, message="").midnightPoint()
         if r is None:

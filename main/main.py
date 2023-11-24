@@ -36,7 +36,7 @@ intents.members = True
 bot = discord.Client(intents=intents)
 
 # 주기적으로 0시를 체크하는 태스크
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=1)
 async def check_midnight():
     now = datetime.datetime.now()
     if now.hour == 0 and now.minute == 0:
@@ -326,7 +326,7 @@ async def on_message(message):
         for user in except_users:
             descript += f"<@{user}>\n"
 
-        descript += "----------------------------------------"
+        descript += f"----------------------------------------\n혹시 유저이름이 보이지 않고 숫자만 보인다면 `<@유저ID>` (그냥 파란색 부분 전체 복사 하면 됨) 를 아무 채팅방에 입력하면 상대방을 멘션해서 누군지 알 수 있습니다. (대신 대상자가 해당 채널을 읽을 수 있다면 알람이 가기 떄문에 {bot.user.mention} 에게 갠디로 하는 것을 추천합니다.)\n----------------------------------------"
         return descript
 
     if message.content.startswith(f"{prefix}마니또"):
@@ -387,7 +387,8 @@ async def on_message(message):
                 901685620768915526,
                 911662717037846599,
                 1075352635961524224,
-                506451468719751178
+                506451468719751178,
+                479254872739545089
             ]
 
             for member in streamer_members:

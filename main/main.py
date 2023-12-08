@@ -234,7 +234,7 @@ async def on_message(message):
         )
         embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
         embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
-        embed.add_field(name='https://collabo.lol/pokemon', value='마크 1.12.2 포켓몬 서버 홈페이지')
+        embed.add_field(name='https://collabo.lol/pokemon', value='마크 1.16.5 포켓몬 서버 홈페이지')
         embed.add_field(name='https://collabo.lol/pvp', value='마크 1.20.1 PVP, 건축 서버 홈페이지')
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')

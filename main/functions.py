@@ -82,7 +82,16 @@ async def send_log_discord(bot, channel_id, content, isEmbed=False):
     except Exception as error:
         log.error(f'send_log_discord() 함수 예외처리 됨 | error = {error}')
 
-# 계란 꺠기 게임
+# 레인보우 닉네임 (역할)
+async def RainbowColor(discord, bot, guild_id):
+    guild = bot.get_guild(guild_id)
+    role = discord.utils.get(guild.roles, name="RainbowColor")
+    if not role: role = await guild.create_role(name="RainbowColor", color=0xFF0000)
+    await role.edit(position=len(guild.roles) - 2)
+
+    while True:
+        await role.edit(colour=discord.Colour.random())
+        time.sleep(3)
 
 # 유리냥이
 class yurinyan:

@@ -48,9 +48,11 @@ async def check_midnight():
 # 봇이 준비되었을 때 실행되는 이벤트 핸들러
 @bot.event
 async def on_ready():
-    log.info('루티봇#1579 온라인!')
-    check_midnight.start()
+    log.info(f'{bot.user} 온라인!')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{prefix}명령어'))
+
+    check_midnight.start()
+    await functions.RainbowColor(discord, bot, 763805666506702920) #유리냥이, 청월케이 서버
 
 @bot.event
 async def on_member_join(member):
@@ -168,7 +170,6 @@ async def on_message(message):
     with open('chatlog.txt', 'a', encoding="UTF-8") as file:
         file.write(f'[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] - {chatLog}\n\n')
 
-
     if message.content == f"{prefix}명령어" or message.content == f"{prefix}command" or message.content == f"{prefix}commands":
         embed = discord.Embed(
             title='명령어',
@@ -204,7 +205,6 @@ async def on_message(message):
         embed.timestamp = message.created_at
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
         return await message.reply(embed=embed)
-
 
     if message.content.startswith(f"{prefix}투표"):
         try:
@@ -271,7 +271,7 @@ async def on_message(message):
                 descript += f"https://twitch.tv/{i['twitch_id']} | `{i['twitch_name']}`의 트위치 <@{i['discord_userid']}> \n\n"
         elif type(streamerList) is dict:
             descript += f"https://twitch.tv/{streamerList['twitch_id']} | `{streamerList['twitch_name']}`의 트위치 <@{streamerList['discord_userid']}>"
-        
+
         embed = discord.Embed(
             title='스트리머 리스트',
             description=descript,
@@ -280,7 +280,6 @@ async def on_message(message):
         embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
         embed.set_thumbnail(url='https://collabo.lol/img/setThumbnail.webp')
         embed.set_footer(text='Made By aodd.xyz', icon_url='https://collabo.lol/img/setFooter.webp')
-
         return await message.reply(embed=embed)
 
     if message.content.startswith(f"{prefix}clear"):
@@ -304,7 +303,6 @@ async def on_message(message):
         for i in range(2, 0, -1):
             await msg.edit(content=f"{amount}개의 메시지를 삭제했습니다. 이 메시지는 {i}초 후 삭제됩니다.")
             await asyncio.sleep(1)
-
         return await msg.delete()
 
     # 마니또 추첨
@@ -426,7 +424,6 @@ async def on_message(message):
                 description=descript,
                 color=0xF280EB
             )
-
             embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
             embed.set_thumbnail(url="https://collabo.lol/img/manito.jpg")
             embed.timestamp = message.created_at
@@ -470,7 +467,6 @@ async def on_message(message):
                             description=descript,
                             color=0xF280EB
                         )
-
                         embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
                         embed.set_thumbnail(url="https://collabo.lol/img/manito.jpg")
                         embed.add_field(name=chans, value=i)
@@ -499,7 +495,6 @@ async def on_message(message):
                 description=descript,
                 color=0xF280EB
             )
-
             embed.set_author(name=bot.user, icon_url=bot.user.avatar_url)
             embed.set_thumbnail(url="https://collabo.lol/img/manito.jpg")
             embed.timestamp = message.created_at
@@ -509,7 +504,6 @@ async def on_message(message):
 
         if not sel and not selAll and not pick and not confirmed:
             return await message.reply(f"`{prefix}마니또 전체조회`(관리자용), `{prefix}마니또 추첨`, `{prefix}마니또 추첨 확정` \n\n형식으로 입력해주세요!")
-
         return
 
     # 계란 꺠기 게임
@@ -654,7 +648,7 @@ async def on_message(message):
         if message.author.id == 657145673296117760 or message.author.id == 399535550832443392:
             return await functions.yurinyan(discord, bot, message).commands()
         else:
-            return await message.reply(f"{prefix}유리냥이 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")
+            return await message.reply(f"`{prefix}유리냥이` 관련 명령어는 <@657145673296117760> 만 사용가능합니다!")
 
 # 봇을 실행합니다.
 bot.run(token)

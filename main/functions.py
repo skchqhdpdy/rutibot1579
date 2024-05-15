@@ -86,8 +86,9 @@ async def send_log_discord(bot, channel_id, content, isEmbed=False):
 async def RainbowColor(discord, bot, guild_id):
     guild = bot.get_guild(guild_id)
     role = discord.utils.get(guild.roles, name="RainbowColor")
-    if not role: role = await guild.create_role(name="RainbowColor", color=0xFF0000)
-    await role.edit(position=len(guild.roles) - 2)
+    if not role:
+        role = await guild.create_role(name="RainbowColor", color=0xFF0000)
+        await role.edit(position=len(guild.roles) - 2)
 
     while True:
         await role.edit(colour=discord.Colour.random())

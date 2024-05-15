@@ -632,7 +632,7 @@ async def on_message(message):
 
 # 봇 초대 명령어
     if message.content == f"{prefix}봇" or message.content == f"{prefix}봇 초대" or message.content == f"{prefix}봇초대" or message.content == f"{prefix}invite":
-        return await message.reply(f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot")
+        return await message.reply(f"https://discord.com/api/oauth2/authorize?client_id={bot.user.id}&permissions=8&scope=bot+applications.commands")
 
 # Ping 명령어
     if message.content == f"{prefix}핑" or message.content == f"{prefix}ping":

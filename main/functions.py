@@ -92,7 +92,7 @@ async def RainbowColor(discord, bot, guild_id):
 
     while True:
         await role.edit(colour=discord.Colour.random())
-        time.sleep(2)
+        time.sleep(3)
 
 # 유리냥이
 class yurinyan:

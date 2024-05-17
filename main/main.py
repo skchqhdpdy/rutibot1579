@@ -41,6 +41,7 @@ async def check_midnight():
     now = datetime.datetime.now()
     if now.hour == 0 and now.minute == 0 and now.second == 0:
         # 0시에 실행할 작업을 여기에 추가
+        return #채널 삭제로 인한 기능 멈춤
         r = await functions.yurinyan(discord, bot, message="").midnightPoint()
         if r is None:
             await functions.send_log_discord(bot, 1162290295380131871, "`yurinyan_` 테이블에 유저 정보가 없음! (포인트)")

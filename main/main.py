@@ -41,7 +41,6 @@ async def check_midnight():
     now = datetime.datetime.now()
     if now.hour == 0 and now.minute == 0 and now.second == 0:
         # 0시에 실행할 작업을 여기에 추가
-        return #채널 삭제로 인한 기능 멈춤
         r = await functions.yurinyan(discord, bot, message="").midnightPoint()
         if r is None:
             await functions.send_log_discord(bot, 1162290295380131871, "`yurinyan_` 테이블에 유저 정보가 없음! (포인트)")
@@ -52,7 +51,7 @@ async def on_ready():
     log.info(f'{bot.user} 온라인!')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{prefix}명령어'))
 
-    check_midnight.start()
+    #check_midnight.start() #채널 삭제로 인한 기능 멈춤
     await functions.RainbowColor(discord, bot, 763805666506702920) #유리냥이, 청월케이 서버
 
 @bot.event

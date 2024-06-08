@@ -51,9 +51,6 @@ async def on_ready():
     log.info(f'{bot.user} 온라인!')
     await bot.change_presence(status=discord.Status.online, activity=discord.Game(name=f'{prefix}명령어'))
 
-    #check_midnight.start() #채널 삭제로 인한 기능 멈춤
-    await functions.RainbowColor(discord, bot, 763805666506702920) #유리냥이, 청월케이 서버
-
 @bot.event
 async def on_member_join(member):
     if member.guild.id == guild_id:
